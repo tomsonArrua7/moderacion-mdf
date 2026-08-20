@@ -8,7 +8,8 @@ import {
   Mic, 
   UserCheck, 
   ArrowRight,
-  Lock
+  Lock,
+  UserPlus
 } from 'lucide-react';
 import { triggerHaptic } from '../../utils/sound';
 
@@ -16,7 +17,9 @@ interface ParticipantViewProps {
   session: DebateSession;
   serverOffsetMs: number;
   currentUserSpeakerId: string | null;
+  myRegisteredSpeakerIds?: string[];
   onRegister: (firstName: string, lastName: string, organization?: string) => void;
+  onSelectSpeaker?: (speakerId: string | null) => void;
   onRequestAdminAccess?: () => void;
   isAdminAuthenticated?: boolean;
 }
@@ -25,13 +28,16 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
   session,
   serverOffsetMs,
   currentUserSpeakerId,
+  myRegisteredSpeakerIds = [],
   onRegister,
+  onSelectSpeaker,
   onRequestAdminAccess,
   isAdminAuthenticated
 }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [organization, setOrganization] = useState('');
+  const [isRegisteringAnother, setIsRegisteringAnother] = useState(false);
 
   // Hook del timer sincronizado
   const timerHook = useDebateTimer(session.timer, serverOffsetMs, true);
@@ -40,12 +46,22 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
   const mySpeaker = session.speakers.find((s) => s.id === currentUserSpeakerId);
   const isRegistered = Boolean(mySpeaker);
 
-  // Orador actual
+  // Todos los oradores anotados desde este teléfono
+  const mySpeakersList = session.speakers.filter((s) => myRegisteredSpeakerIds.includes(s.id));
+
+  // Orador actual en el escenario
   const currentSpeaker = session.currentSpeakerIndex >= 0 
     ? session.speakers[session.currentSpeakerIndex] 
     : undefined;
 
-  const isMyTurn = mySpeaker && currentSpeaker && mySpeaker.id === currentSpeaker.id;
+  // Solo mostrar la alerta "¡ES TU TURNO DE HABLAR!" si el debate está activo y realmente está hablando
+  const isMyTurn = Boolean(
+    mySpeaker && 
+    currentSpeaker && 
+    mySpeaker.id === currentSpeaker.id && 
+    session.status === 'DEBATE_ACTIVE' && 
+    currentSpeaker.status === 'SPEAKING'
+  );
 
   // Cuántos oradores faltan para mi turno
   const speakersAhead = mySpeaker
@@ -65,6 +81,10 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
     e.preventDefault();
     if (!firstName.trim() || !lastName.trim()) return;
     onRegister(firstName.trim(), lastName.trim(), organization.trim() || undefined);
+    setFirstName('');
+    setLastName('');
+    setOrganization('');
+    setIsRegisteringAnother(false);
   };
 
   return (
@@ -84,6 +104,33 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
         )}
       </div>
 
+      {/* Selector de perfil si anotó a más de una persona desde este móvil */}
+      {mySpeakersList.length > 1 && (
+        <div className="bg-mdf-darkSurface p-2 rounded-2xl border border-mdf-darkBorder">
+          <div className="text-[10px] uppercase font-bold text-slate-400 mb-1.5 px-2">
+            Oradores anotados desde este teléfono:
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto pb-1">
+            {mySpeakersList.map((spk) => (
+              <button
+                key={spk.id}
+                onClick={() => {
+                  onSelectSpeaker?.(spk.id);
+                  setIsRegisteringAnother(false);
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                  currentUserSpeakerId === spk.id
+                    ? 'bg-mdf-blue text-white shadow-md shadow-mdf-blue/40 border border-mdf-cyan'
+                    : 'bg-mdf-darkBg text-slate-400 hover:text-white border border-slate-800'
+                }`}
+              >
+                #{spk.order} {spk.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Alerta de "¡ES TU TURNO DE HABLAR!" */}
       {isMyTurn && (
         <div className="p-5 rounded-3xl bg-gradient-to-r from-mdf-blue via-mdf-cyan to-mdf-blue text-slate-950 shadow-2xl shadow-mdf-cyan/50 animate-bounce-short border-2 border-white text-center">
@@ -100,13 +147,13 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
       )}
 
       {/* Tarjeta de Estado del Participante */}
-      {isRegistered ? (
+      {isRegistered && !isRegisteringAnother ? (
         <div className="glass-panel-mdf rounded-3xl p-5 shadow-xl border border-mdf-cyan/30 text-center relative overflow-hidden">
           <div className="flex items-center justify-center gap-1.5 text-xs text-mdf-cyan font-bold uppercase tracking-wider mb-1">
             <UserCheck className="w-4 h-4" />
             <span>Inscripción Confirmada</span>
           </div>
-          <div className="text-lg font-black text-white">{mySpeaker?.name}</div>
+          <div className="text-xl font-black text-white">{mySpeaker?.name}</div>
           {mySpeaker?.organization && (
             <div className="text-xs text-slate-300 font-medium">{mySpeaker.organization}</div>
           )}
@@ -126,12 +173,25 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
                   ? '🎤 En uso de la palabra'
                   : mySpeaker?.status === 'DONE'
                   ? '✅ Turno cumplido'
+                  : session.status === 'CONFIG' || session.status === 'REGISTRATION_OPEN'
+                  ? '⏳ En lista (Esperando sorteo)'
                   : speakersAhead > 0
                   ? `Faltan ${speakersAhead} oradores`
                   : 'Próximo a hablar'}
               </span>
             </div>
           </div>
+
+          {/* Botón para Anotar a otra persona desde este dispositivo */}
+          {session.status === 'REGISTRATION_OPEN' && (
+            <button
+              onClick={() => setIsRegisteringAnother(true)}
+              className="mt-4 w-full flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-mdf-darkBg hover:bg-slate-800 text-mdf-cyan hover:text-white border border-mdf-darkBorder text-xs font-bold transition-colors"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>+ Anotar a otro compañero desde este móvil</span>
+            </button>
+          )}
         </div>
       ) : (
         /* Formulario de Inscripción con Nombre, Apellido y Organización Opcional */
@@ -142,10 +202,10 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
                 <Mic className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-black text-white tracking-tight">
-                Anotarme para Hablar
+                {isRegisteringAnother ? 'Anotar a Otro Compañero' : 'Anotarme para Hablar'}
               </h3>
               <p className="text-xs text-slate-400">
-                Ingresa tus datos para ingresar al debate
+                Ingresa los datos para registrar el turno de oratoria
               </p>
             </div>
 
@@ -193,20 +253,31 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
                 />
               </div>
 
-              <button
-                type="submit"
-                className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-gradient-to-r from-mdf-blue to-mdf-blueHover text-white font-black text-sm shadow-xl shadow-mdf-blue/40 transition-all active:scale-95 mt-2"
-              >
-                <span>¡Anotarme en la Lista!</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+              <div className="flex gap-2 pt-1">
+                {isRegisteringAnother && (
+                  <button
+                    type="button"
+                    onClick={() => setIsRegisteringAnother(false)}
+                    className="py-3.5 px-4 rounded-xl bg-mdf-darkBg text-slate-400 text-xs font-bold hover:text-white"
+                  >
+                    Volver
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className="flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-gradient-to-r from-mdf-blue to-mdf-blueHover text-white font-black text-sm shadow-xl shadow-mdf-blue/40 transition-all active:scale-95"
+                >
+                  <span>{isRegisteringAnother ? 'Guardar Inscripción' : '¡Anotarme en la Lista!'}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
             </form>
           </div>
         ) : (
           <div className="bg-mdf-darkSurface/60 border border-slate-800 rounded-3xl p-5 text-center text-slate-400 text-xs">
             <Clock className="w-6 h-6 mx-auto mb-2 text-slate-500" />
             <p className="font-semibold text-slate-300 text-sm mb-1">Inscripciones Cerradas</p>
-            <p>El moderador abrirá las inscripciones cuando inicie el bloque de oradores.</p>
+            <p>El moderador abrirá las inscripciones en vivo cuando inicie el bloque.</p>
           </div>
         )
       )}

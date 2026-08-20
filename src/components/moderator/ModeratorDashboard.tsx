@@ -10,6 +10,8 @@ import { BigTimerDisplay } from '../timer/BigTimerDisplay';
 import { LiveTimerControls } from './LiveTimerControls';
 import { SpeakerQueueManager } from './SpeakerQueueManager';
 import { BlockConfigModal } from './BlockConfigModal';
+import { CloudSyncModal } from './CloudSyncModal';
+import { FirebaseConfig } from '../../services/firebase';
 import { 
   Lock, 
   Unlock, 
@@ -19,13 +21,16 @@ import {
   RotateCcw, 
   Users, 
   Clock,
-  QrCode
+  QrCode,
+  Cloud
 } from 'lucide-react';
 import { formatDurationHuman } from '../../utils/timeUtils';
 
 interface ModeratorDashboardProps {
   session: DebateSession;
   serverOffsetMs: number;
+  isFirebaseConnected?: boolean;
+  onConfigureFirebase?: (config: FirebaseConfig) => void;
   onUpdateConfig: (config: {
     title?: string;
     description?: string;
@@ -51,6 +56,8 @@ interface ModeratorDashboardProps {
 export const ModeratorDashboard: React.FC<ModeratorDashboardProps> = ({
   session,
   serverOffsetMs,
+  isFirebaseConnected = false,
+  onConfigureFirebase,
   onUpdateConfig,
   onSetRegistrationStatus,
   onShuffleSpeakers,
@@ -66,7 +73,6 @@ export const ModeratorDashboard: React.FC<ModeratorDashboardProps> = ({
   onOpenQR
 }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    // Si ya ingresó el pin en esta sesión de navegador
     if (typeof window !== 'undefined') {
       return sessionStorage.getItem(`mdf_auth_${session.id}`) === 'true';
     }
@@ -75,6 +81,7 @@ export const ModeratorDashboard: React.FC<ModeratorDashboardProps> = ({
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
 
   // Hook del Timer Sincronizado
   const timerHook = useDebateTimer(session.timer, serverOffsetMs, true);
@@ -96,7 +103,7 @@ export const ModeratorDashboard: React.FC<ModeratorDashboardProps> = ({
     }
   };
 
-  // Pantalla de Bloqueo / Autenticación PIN para Moderador
+  // Pantalla de Bloqueo PIN
   if (!isAuthenticated) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center p-4">
@@ -113,7 +120,7 @@ export const ModeratorDashboard: React.FC<ModeratorDashboardProps> = ({
             <input
               type="password"
               inputMode="numeric"
-              maxLength={6}
+              maxLength={8}
               autoFocus
               value={pinInput}
               onChange={(e) => {
@@ -169,7 +176,7 @@ export const ModeratorDashboard: React.FC<ModeratorDashboardProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons: Inscripción, Configuración, QR, Reset */}
+        {/* Action Buttons: Inscripción, Configuración, Cloud DB, QR, Reset */}
         <div className="flex items-center gap-2 flex-wrap">
           
           {/* Abrir / Cerrar Inscripción */}
@@ -190,6 +197,20 @@ export const ModeratorDashboard: React.FC<ModeratorDashboardProps> = ({
               <span>Abrir Lista</span>
             </button>
           )}
+
+          {/* Botón de Sincronización en la Nube */}
+          <button
+            onClick={() => setIsCloudModalOpen(true)}
+            className={`flex items-center gap-1.5 py-2.5 px-3.5 rounded-xl border text-xs font-semibold transition-colors ${
+              isFirebaseConnected 
+                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' 
+                : 'bg-mdf-darkBg hover:bg-slate-800 text-slate-300 border-mdf-darkBorder'
+            }`}
+            title="Conectar Base de Datos en Tiempo Real (Firebase / Vercel)"
+          >
+            <Cloud className="w-4 h-4 text-mdf-cyan" />
+            <span className="hidden sm:inline">{isFirebaseConnected ? 'Nube Conectada' : 'Conectar Nube'}</span>
+          </button>
 
           {/* Configuración */}
           <button
@@ -295,6 +316,15 @@ export const ModeratorDashboard: React.FC<ModeratorDashboardProps> = ({
         onClose={() => setIsConfigOpen(false)}
         session={session}
         onSave={onUpdateConfig}
+      />
+
+      {/* Modal de Sincronización en la Nube */}
+      <CloudSyncModal
+        isOpen={isCloudModalOpen}
+        onClose={() => setIsCloudModalOpen(false)}
+        onConfigSaved={(cfg) => {
+          onConfigureFirebase?.(cfg);
+        }}
       />
 
     </div>

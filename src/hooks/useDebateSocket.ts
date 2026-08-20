@@ -9,6 +9,13 @@ import {
 } from '../types/debate';
 import { calculateSpeakerTimeSeconds } from '../utils/timeUtils';
 import { shuffleAndReorderSpeakers } from '../utils/shuffle';
+import { 
+  subscribeToFirebaseSession, 
+  syncSessionToFirebase, 
+  getStoredFirebaseConfig, 
+  saveStoredFirebaseConfig,
+  FirebaseConfig 
+} from '../services/firebase';
 
 // Estado inicial limpio (sin oradores de prueba)
 export const createInitialSession = (sessionId = 'MDF-JUV'): DebateSession => ({
@@ -21,7 +28,7 @@ export const createInitialSession = (sessionId = 'MDF-JUV'): DebateSession => ({
   minSpeakerSeconds: 60,
   maxSpeakerSeconds: 300,
   calculatedSpeakerSeconds: 180,
-  speakers: [], // Lista limpia sin oradores de prueba
+  speakers: [],
   currentSpeakerIndex: -1,
   timer: {
     status: 'IDLE',
@@ -37,14 +44,11 @@ export const createInitialSession = (sessionId = 'MDF-JUV'): DebateSession => ({
 
 export const useDebateSocket = (sessionId = 'MDF-JUV') => {
   const [session, setSession] = useState<DebateSession>(() => {
-    // Intentar leer de localStorage si existe
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(`mdf_session_${sessionId}`);
       if (saved) {
         try {
-          const parsed = JSON.parse(saved);
-          // Si tenía oradores demo previos, limpiarlos si se desea
-          return parsed;
+          return JSON.parse(saved);
         } catch {
           // fallback
         }
@@ -54,13 +58,34 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
   });
 
   const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [isFirebaseConnected, setIsFirebaseConnected] = useState<boolean>(false);
   const [serverOffsetMs, setServerOffsetMs] = useState<number>(0);
+  
+  // Lista de todos los oradores anotados desde este mismo dispositivo
+  const [myRegisteredSpeakerIds, setMyRegisteredSpeakerIds] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(`mdf_my_speakers_${sessionId}`);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {
+          // fallback
+        }
+      }
+      const single = localStorage.getItem(`mdf_speaker_id_${sessionId}`);
+      if (single) return [single];
+    }
+    return [];
+  });
+
+  // ID del orador activo que el usuario está visualizando en su móvil
   const [currentUserSpeakerId, setCurrentUserSpeakerId] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem(`mdf_speaker_id_${sessionId}`) || null;
     }
     return null;
   });
+
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
   const socketRef = useRef<Socket | null>(null);
@@ -72,13 +97,29 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
     }
   }, [session, sessionId]);
 
+  // Conexión con Firebase Realtime Database si está configurado
+  useEffect(() => {
+    const fbConfig = getStoredFirebaseConfig();
+    if (!fbConfig) {
+      setIsFirebaseConnected(false);
+      return;
+    }
+
+    const unsubscribe = subscribeToFirebaseSession(sessionId, (updatedSession) => {
+      setSession(updatedSession);
+      setIsFirebaseConnected(true);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [sessionId]);
+
   // Conectar con Socket.io
   useEffect(() => {
-    // URL del servidor Socket.io (soporta VITE_SOCKET_URL para conectar Vercel con Render/Railway)
     const envSocketUrl = import.meta.env.VITE_SOCKET_URL;
     let socketUrl = envSocketUrl || (window.location.hostname === 'localhost' ? 'http://localhost:3001' : window.location.origin);
     
-    // Si estamos en Vercel y no hay variable de entorno, intentar conectarse o funcionar en broadcast
     const socket = io(socketUrl, {
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 5,
@@ -92,7 +133,6 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
       setIsConnected(true);
       setConnectionError(null);
       
-      // Medir desfase horario
       const clientSend = Date.now();
       socket.emit('session:sync_time', { clientSend }, (serverTime: number) => {
         const clientRecv = Date.now();
@@ -101,7 +141,6 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
         setServerOffsetMs(offset);
       });
 
-      // Unirse a la sala
       socket.emit('session:join', { sessionId });
     });
 
@@ -110,11 +149,9 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
     });
 
     socket.on('connect_error', () => {
-      // Si estamos en Vercel sin servidor websocket externo aún, funciona en modo local/p2p
       setIsConnected(false);
     });
 
-    // Actualizaciones de sesión desde el servidor
     socket.on('session:state', (updatedSession: DebateSession) => {
       setSession(updatedSession);
     });
@@ -142,11 +179,14 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
     };
   }, [sessionId]);
 
-  // Helper para emitir o aplicar cambio
+  // Helper para emitir o aplicar cambio a todos los canales (Firebase + Sockets + Local)
   const broadcastOrApply = useCallback((updater: (prev: DebateSession) => DebateSession, serverEvent?: string, payload?: unknown) => {
     setSession((prev) => {
       const next = updater(prev);
       
+      // Enviar a Firebase Realtime Database
+      syncSessionToFirebase(next);
+
       // Enviar por BroadcastChannel local
       if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
         try {
@@ -201,14 +241,42 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
       };
     }, 'speaker:register', { name: fullName, organization, speakerId: newId });
 
+    // Guardar en la lista de oradores anotados desde este teléfono
+    setMyRegisteredSpeakerIds((prev) => {
+      const updated = [...prev, newId];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`mdf_my_speakers_${sessionId}`, JSON.stringify(updated));
+        localStorage.setItem(`mdf_speaker_id_${sessionId}`, newId);
+      }
+      return updated;
+    });
+
     setCurrentUserSpeakerId(newId);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(`mdf_speaker_id_${sessionId}`, newId);
-    }
     return newId;
   }, [broadcastOrApply, sessionId]);
 
-  // 2. Configurar Parámetros del Bloque (incluye cambio de PIN / Contraseña)
+  // Cambiar de perfil visualizado en este teléfono
+  const selectMySpeaker = useCallback((speakerId: string | null) => {
+    setCurrentUserSpeakerId(speakerId);
+    if (typeof window !== 'undefined') {
+      if (speakerId) {
+        localStorage.setItem(`mdf_speaker_id_${sessionId}`, speakerId);
+      } else {
+        localStorage.removeItem(`mdf_speaker_id_${sessionId}`);
+      }
+    }
+  }, [sessionId]);
+
+  // Configurar Firebase manualmente desde la app
+  const configureFirebase = useCallback((config: FirebaseConfig) => {
+    saveStoredFirebaseConfig(config);
+    subscribeToFirebaseSession(sessionId, (updatedSession) => {
+      setSession(updatedSession);
+      setIsFirebaseConnected(true);
+    }, config);
+  }, [sessionId]);
+
+  // 2. Configurar Parámetros del Bloque
   const updateConfig = useCallback((params: {
     title?: string;
     description?: string;
@@ -597,11 +665,15 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
   return {
     session,
     isConnected,
+    isFirebaseConnected,
     serverOffsetMs,
     currentUserSpeakerId,
+    myRegisteredSpeakerIds,
     connectionError,
     // Acciones
     registerSpeaker,
+    selectMySpeaker,
+    configureFirebase,
     updateConfig,
     setRegistrationStatus,
     shuffleSpeakers,

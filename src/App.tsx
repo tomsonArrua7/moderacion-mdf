@@ -29,9 +29,13 @@ export function App() {
   const {
     session,
     isConnected,
+    isFirebaseConnected,
     serverOffsetMs,
     currentUserSpeakerId,
+    myRegisteredSpeakerIds,
     registerSpeaker,
+    selectMySpeaker,
+    configureFirebase,
     updateConfig,
     setRegistrationStatus,
     shuffleSpeakers,
@@ -102,7 +106,7 @@ export function App() {
         session={session}
         currentView={currentView}
         onViewChange={handleViewChange}
-        isConnected={isConnected}
+        isConnected={isConnected || isFirebaseConnected}
         onOpenQR={() => setIsQROpen(true)}
         isAdminAuthenticated={isAdminAuthenticated}
         onRequestAdminAuth={() => setIsAdminAuthModalOpen(true)}
@@ -115,6 +119,8 @@ export function App() {
           <ModeratorDashboard
             session={session}
             serverOffsetMs={serverOffsetMs}
+            isFirebaseConnected={isFirebaseConnected}
+            onConfigureFirebase={configureFirebase}
             onUpdateConfig={updateConfig}
             onSetRegistrationStatus={setRegistrationStatus}
             onShuffleSpeakers={shuffleSpeakers}
@@ -139,7 +145,9 @@ export function App() {
             session={session}
             serverOffsetMs={serverOffsetMs}
             currentUserSpeakerId={currentUserSpeakerId}
+            myRegisteredSpeakerIds={myRegisteredSpeakerIds}
             onRegister={registerSpeaker}
+            onSelectSpeaker={selectMySpeaker}
             onRequestAdminAccess={() => setIsAdminAuthModalOpen(true)}
             isAdminAuthenticated={isAdminAuthenticated}
           />
