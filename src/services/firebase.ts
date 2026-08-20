@@ -129,7 +129,7 @@ export const subscribeToFirebaseServerOffset = (
 
 export const subscribeToFirebaseSession = (
   sessionId: string,
-  onUpdate: (session: DebateSession) => void,
+  onUpdate: (session: DebateSession | null) => void,
   customConfig?: FirebaseConfig
 ): (() => void) => {
   const { db: database } = initFirebase(customConfig);
@@ -146,6 +146,8 @@ export const subscribeToFirebaseSession = (
         data.speakers = [];
       }
       onUpdate(data as DebateSession);
+    } else {
+      onUpdate(null);
     }
   });
 

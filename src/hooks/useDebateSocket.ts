@@ -50,28 +50,33 @@ export const createInitialSession = (sessionId = 'COMISION-1'): DebateSession =>
   };
 };
 
-export const useDebateSocket = (sessionId = 'MDF-JUV') => {
-  const [session, setSession] = useState<DebateSession>(() => {
+export const useDebateSocket = (sessionId = 'COMISION-1') => {
+  // Helper para cargar la sesión desde localStorage o crear una nueva
+  const getSessionForId = useCallback((id: string): DebateSession => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(`mdf_session_${sessionId}`);
+      const saved = localStorage.getItem(`mdf_session_${id}`);
       if (saved) {
         try {
-          return JSON.parse(saved);
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.id === id) {
+            return parsed;
+          }
         } catch {
           // fallback
         }
       }
     }
-    return createInitialSession(sessionId);
-  });
+    return createInitialSession(id);
+  }, []);
 
+  const [session, setSession] = useState<DebateSession>(() => getSessionForId(sessionId));
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [isFirebaseConnected, setIsFirebaseConnected] = useState<boolean>(false);
   const [serverOffsetMs, setServerOffsetMs] = useState<number>(0);
   const serverOffsetRef = useRef<number>(0);
   serverOffsetRef.current = serverOffsetMs;
   
-  // Lista de todos los oradores anotados desde este mismo dispositivo
+  // Lista de todos los oradores anotados desde este mismo dispositivo para esta comisión
   const [myRegisteredSpeakerIds, setMyRegisteredSpeakerIds] = useState<string[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(`mdf_my_speakers_${sessionId}`);
@@ -97,12 +102,34 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
   });
 
   const [connectionError, setConnectionError] = useState<string | null>(null);
-
   const socketRef = useRef<Socket | null>(null);
 
-  // Persistir en LocalStorage como backup local
+  // Sincronizar inmediatamente cuando cambia el sessionId
   useEffect(() => {
-    if (typeof window !== 'undefined' && session) {
+    const nextSession = getSessionForId(sessionId);
+    setSession(nextSession);
+
+    if (typeof window !== 'undefined') {
+      const mySaved = localStorage.getItem(`mdf_my_speakers_${sessionId}`);
+      if (mySaved) {
+        try {
+          setMyRegisteredSpeakerIds(JSON.parse(mySaved));
+        } catch {
+          setMyRegisteredSpeakerIds([]);
+        }
+      } else {
+        const single = localStorage.getItem(`mdf_speaker_id_${sessionId}`);
+        setMyRegisteredSpeakerIds(single ? [single] : []);
+      }
+
+      const activeSpeaker = localStorage.getItem(`mdf_speaker_id_${sessionId}`);
+      setCurrentUserSpeakerId(activeSpeaker || null);
+    }
+  }, [sessionId, getSessionForId]);
+
+  // Persistir en LocalStorage como backup local de la sesión activa
+  useEffect(() => {
+    if (typeof window !== 'undefined' && session && session.id === sessionId) {
       localStorage.setItem(`mdf_session_${sessionId}`, JSON.stringify(session));
     }
   }, [session, sessionId]);
@@ -115,10 +142,18 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
       return;
     }
 
-    // 1. Suscribirse a la sesión
+    // 1. Suscribirse a la sesión de esta comisión
     const unsubscribeSession = subscribeToFirebaseSession(sessionId, (updatedSession) => {
-      setSession(updatedSession);
-      setIsFirebaseConnected(true);
+      if (updatedSession) {
+        setSession(updatedSession);
+        setIsFirebaseConnected(true);
+      } else {
+        // Si no existe aún en Firebase, sincronizar el estado inicial para que exista
+        const fresh = createInitialSession(sessionId);
+        syncSessionToFirebase(fresh);
+        setSession(fresh);
+        setIsFirebaseConnected(true);
+      }
     });
 
     // 2. Suscribirse al offset del servidor de Firebase para eliminar el desfase horario
@@ -172,7 +207,9 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
     });
 
     socket.on('session:state', (updatedSession: DebateSession) => {
-      setSession(updatedSession);
+      if (updatedSession.id === sessionId) {
+        setSession(updatedSession);
+      }
     });
 
     socket.on('session:error', (errorMsg: string) => {
@@ -186,7 +223,7 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
 
     if (bc) {
       bc.onmessage = (event) => {
-        if (event.data && event.data.type === 'SESSION_UPDATE') {
+        if (event.data && event.data.type === 'SESSION_UPDATE' && event.data.session.id === sessionId) {
           setSession(event.data.session);
         }
       };
@@ -289,8 +326,10 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
   const configureFirebase = useCallback((config: FirebaseConfig) => {
     saveStoredFirebaseConfig(config);
     subscribeToFirebaseSession(sessionId, (updatedSession) => {
-      setSession(updatedSession);
-      setIsFirebaseConnected(true);
+      if (updatedSession) {
+        setSession(updatedSession);
+        setIsFirebaseConnected(true);
+      }
     }, config);
     subscribeToFirebaseServerOffset((offset) => {
       setServerOffsetMs(offset);
