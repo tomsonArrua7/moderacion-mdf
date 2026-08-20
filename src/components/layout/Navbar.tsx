@@ -9,7 +9,9 @@ import {
   Wifi, 
   WifiOff, 
   Users,
-  Clock
+  Clock,
+  Lock,
+  LogOut
 } from 'lucide-react';
 import { DebateSession } from '../../types/debate';
 import { setSoundEnabled } from '../../utils/sound';
@@ -20,6 +22,9 @@ interface NavbarProps {
   onViewChange: (view: 'moderator' | 'participant' | 'projector') => void;
   isConnected: boolean;
   onOpenQR: () => void;
+  isAdminAuthenticated: boolean;
+  onRequestAdminAuth: () => void;
+  onAdminLogout: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -27,7 +32,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentView,
   onViewChange,
   isConnected,
-  onOpenQR
+  onOpenQR,
+  isAdminAuthenticated,
+  onRequestAdminAuth,
+  onAdminLogout
 }) => {
   const [audioOn, setAudioOn] = useState<boolean>(true);
 
@@ -68,7 +76,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               alt="MDF Juventudes Logo" 
               className="h-full w-full object-cover"
               onError={(e) => {
-                // Fallback visual si no cargara la imagen
                 (e.target as HTMLElement).style.display = 'none';
               }}
             />
@@ -80,7 +87,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
             </div>
             <div className="flex items-center gap-2 text-xs text-slate-400">
-              <span className="truncate max-w-[200px] md:max-w-xs font-medium text-slate-300">{session.title}</span>
+              <span className="truncate max-w-[180px] md:max-w-xs font-medium text-slate-300">{session.title}</span>
             </div>
           </div>
         </div>
@@ -98,23 +105,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* View Switcher & Action Controls */}
+        {/* Navigation & Controls */}
         <div className="flex items-center gap-1.5 md:gap-2">
-          {/* Navigation Tabs for Views */}
+          {/* Navigation Tabs */}
           <div className="flex bg-mdf-darkSurface/90 p-1 rounded-xl border border-mdf-darkBorder">
-            <button
-              onClick={() => onViewChange('moderator')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                currentView === 'moderator'
-                  ? 'bg-mdf-blue text-white shadow-md shadow-mdf-blue/40'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-              title="Panel de Moderador (Admin)"
-            >
-              <Shield className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Moderador</span>
-            </button>
-
+            
+            {/* Tab Participante (Siempre visible para el público) */}
             <button
               onClick={() => onViewChange('participant')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
@@ -128,6 +124,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="hidden md:inline">Participante</span>
             </button>
 
+            {/* Tab Proyector (Visible para público/pantalla) */}
             <button
               onClick={() => onViewChange('projector')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
@@ -140,7 +137,44 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Tv className="w-3.5 h-3.5" />
               <span className="hidden md:inline">Proyector</span>
             </button>
+
+            {/* Tab Moderador: Solo visible si está autenticado como Admin, o botón para autenticar */}
+            {isAdminAuthenticated ? (
+              <button
+                onClick={() => onViewChange('moderator')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  currentView === 'moderator'
+                    ? 'bg-mdf-blue text-white shadow-md shadow-mdf-blue/40 ring-1 ring-mdf-cyan'
+                    : 'text-mdf-cyan hover:bg-mdf-blue/20'
+                }`}
+                title="Panel de Moderador (Admin)"
+              >
+                <Shield className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">Moderador</span>
+              </button>
+            ) : (
+              <button
+                onClick={onRequestAdminAuth}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-300 hover:bg-slate-800/50 transition-colors"
+                title="Acceder como Moderador (Requiere PIN)"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span className="hidden lg:inline text-[11px]">Admin</span>
+              </button>
+            )}
+
           </div>
+
+          {/* Si está autenticado como moderador, botón para cerrar sesión admin */}
+          {isAdminAuthenticated && (
+            <button
+              onClick={onAdminLogout}
+              className="p-2 rounded-xl bg-mdf-darkSurface hover:bg-red-950/60 text-slate-400 hover:text-red-300 border border-mdf-darkBorder transition-colors"
+              title="Cerrar Sesión de Moderador"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          )}
 
           {/* QR Button */}
           <button
@@ -167,7 +201,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Online Connection Status indicator */}
           <div 
             className="flex items-center gap-1 p-2 rounded-xl bg-mdf-darkSurface border border-mdf-darkBorder text-xs text-slate-400"
-            title={isConnected ? 'Conectado al servidor en tiempo real' : 'Modo local (sin servidor socket activo)'}
+            title={isConnected ? 'Conectado al servidor en tiempo real' : 'Modo local / P2P'}
           >
             {isConnected ? (
               <Wifi className="w-4 h-4 text-emerald-400" />

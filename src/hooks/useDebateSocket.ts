@@ -10,7 +10,7 @@ import {
 import { calculateSpeakerTimeSeconds } from '../utils/timeUtils';
 import { shuffleAndReorderSpeakers } from '../utils/shuffle';
 
-// Estado inicial por defecto de una sesión
+// Estado inicial limpio (sin oradores de prueba)
 export const createInitialSession = (sessionId = 'MDF-JUV'): DebateSession => ({
   id: sessionId,
   title: 'Lanzamiento MDF Juventudes - Comisión de Debate',
@@ -21,52 +21,7 @@ export const createInitialSession = (sessionId = 'MDF-JUV'): DebateSession => ({
   minSpeakerSeconds: 60,
   maxSpeakerSeconds: 300,
   calculatedSpeakerSeconds: 180,
-  speakers: [
-    {
-      id: 'demo-1',
-      name: 'Camila Rossi',
-      organization: 'Juventudes CABA',
-      registeredAt: Date.now() - 120000,
-      order: 1,
-      status: 'WAITING',
-      isException: false,
-      timeAllocatedSeconds: 180,
-      timeSpokenSeconds: 0
-    },
-    {
-      id: 'demo-2',
-      name: 'Lucas Benítez',
-      organization: 'MDF Universitarios',
-      registeredAt: Date.now() - 90000,
-      order: 2,
-      status: 'WAITING',
-      isException: false,
-      timeAllocatedSeconds: 180,
-      timeSpokenSeconds: 0
-    },
-    {
-      id: 'demo-3',
-      name: 'Sofía Navarro',
-      organization: 'Secretaría de Formación',
-      registeredAt: Date.now() - 60000,
-      order: 3,
-      status: 'WAITING',
-      isException: false,
-      timeAllocatedSeconds: 180,
-      timeSpokenSeconds: 0
-    },
-    {
-      id: 'demo-4',
-      name: 'Martín Albornoz',
-      organization: 'MDF Zona Norte',
-      registeredAt: Date.now() - 30000,
-      order: 4,
-      status: 'WAITING',
-      isException: false,
-      timeAllocatedSeconds: 180,
-      timeSpokenSeconds: 0
-    }
-  ],
+  speakers: [], // Lista limpia sin oradores de prueba
   currentSpeakerIndex: -1,
   timer: {
     status: 'IDLE',
@@ -87,7 +42,9 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
       const saved = localStorage.getItem(`mdf_session_${sessionId}`);
       if (saved) {
         try {
-          return JSON.parse(saved);
+          const parsed = JSON.parse(saved);
+          // Si tenía oradores demo previos, limpiarlos si se desea
+          return parsed;
         } catch {
           // fallback
         }
@@ -108,7 +65,7 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
 
   const socketRef = useRef<Socket | null>(null);
 
-  // Persistir en LocalStorage como backup
+  // Persistir en LocalStorage como backup local
   useEffect(() => {
     if (typeof window !== 'undefined' && session) {
       localStorage.setItem(`mdf_session_${sessionId}`, JSON.stringify(session));
@@ -117,13 +74,16 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
 
   // Conectar con Socket.io
   useEffect(() => {
-    const socketUrl = window.location.hostname === 'localhost' ? 'http://localhost:3001' : window.location.origin;
+    // URL del servidor Socket.io (soporta VITE_SOCKET_URL para conectar Vercel con Render/Railway)
+    const envSocketUrl = import.meta.env.VITE_SOCKET_URL;
+    let socketUrl = envSocketUrl || (window.location.hostname === 'localhost' ? 'http://localhost:3001' : window.location.origin);
     
+    // Si estamos en Vercel y no hay variable de entorno, intentar conectarse o funcionar en broadcast
     const socket = io(socketUrl, {
       transports: ['websocket', 'polling'],
-      reconnectionAttempts: 10,
-      reconnectionDelay: 1000,
-      timeout: 5000
+      reconnectionAttempts: 5,
+      reconnectionDelay: 2000,
+      timeout: 6000
     });
 
     socketRef.current = socket;
@@ -149,8 +109,8 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
       setIsConnected(false);
     });
 
-    socket.on('connect_error', (err) => {
-      console.warn('Socket connection warning (operating in local broadcast mode):', err.message);
+    socket.on('connect_error', () => {
+      // Si estamos en Vercel sin servidor websocket externo aún, funciona en modo local/p2p
       setIsConnected(false);
     });
 
@@ -163,7 +123,7 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
       setConnectionError(errorMsg);
     });
 
-    // BroadcastChannel para sincronización entre pestañas en el mismo navegador (modo offline o sin backend)
+    // BroadcastChannel para sincronización entre pestañas en el mismo navegador
     const bc = typeof window !== 'undefined' && 'BroadcastChannel' in window
       ? new BroadcastChannel(`mdf_channel_${sessionId}`)
       : null;
@@ -182,7 +142,7 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
     };
   }, [sessionId]);
 
-  // Helper para emitir o aplicar cambio localmente si está offline
+  // Helper para emitir o aplicar cambio
   const broadcastOrApply = useCallback((updater: (prev: DebateSession) => DebateSession, serverEvent?: string, payload?: unknown) => {
     setSession((prev) => {
       const next = updater(prev);
@@ -207,16 +167,15 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
     });
   }, [sessionId]);
 
-  // Acciones de Negocio:
-
   // 1. Registro de Participante
-  const registerSpeaker = useCallback((name: string, organization?: string): string => {
+  const registerSpeaker = useCallback((firstName: string, lastName: string, organization?: string): string => {
+    const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
     const newId = 'spk_' + Math.random().toString(36).substr(2, 9);
     
     broadcastOrApply((prev) => {
       const newSpeaker: Speaker = {
         id: newId,
-        name: name.trim(),
+        name: fullName,
         organization: organization?.trim() || undefined,
         registeredAt: Date.now(),
         order: prev.speakers.length + 1,
@@ -240,7 +199,7 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
         calculatedSpeakerSeconds: calculatedSeconds,
         updatedAt: Date.now()
       };
-    }, 'speaker:register', { name, organization, speakerId: newId });
+    }, 'speaker:register', { name: fullName, organization, speakerId: newId });
 
     setCurrentUserSpeakerId(newId);
     if (typeof window !== 'undefined') {
@@ -249,7 +208,7 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
     return newId;
   }, [broadcastOrApply, sessionId]);
 
-  // 2. Configurar Parámetros del Bloque
+  // 2. Configurar Parámetros del Bloque (incluye cambio de PIN / Contraseña)
   const updateConfig = useCallback((params: {
     title?: string;
     description?: string;
@@ -363,7 +322,7 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
     }, 'speaker:set_current', { index });
   }, [broadcastOrApply]);
 
-  // 6. Control del Timer (Iniciar, Pausar, Reanudar, +30s, -30s)
+  // 6. Control del Timer
   const controlTimer = useCallback((action: TimerControlPayload['action'], customSeconds?: number) => {
     broadcastOrApply((prev) => {
       const now = Date.now();
@@ -546,7 +505,6 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
       newSpeakers[index] = newSpeakers[targetIndex];
       newSpeakers[targetIndex] = temp;
 
-      // Reasignar número de orden
       const renumbered = newSpeakers.map((s, idx) => ({ ...s, order: idx + 1 }));
 
       return {
@@ -557,7 +515,7 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
     }, 'speaker:move', { speakerId, direction });
   }, [broadcastOrApply]);
 
-  // 9. Cambiar estado de orador (Ausente, Salteado, etc.)
+  // 9. Cambiar estado de orador
   const updateSpeakerStatus = useCallback((speakerId: string, status: SpeakerStatus) => {
     broadcastOrApply((prev) => {
       const updated = prev.speakers.map((s) => s.id === speakerId ? { ...s, status } : s);

@@ -7,7 +7,8 @@ import {
   Clock, 
   Mic, 
   UserCheck, 
-  ArrowRight
+  ArrowRight,
+  Lock
 } from 'lucide-react';
 import { triggerHaptic } from '../../utils/sound';
 
@@ -15,16 +16,21 @@ interface ParticipantViewProps {
   session: DebateSession;
   serverOffsetMs: number;
   currentUserSpeakerId: string | null;
-  onRegister: (name: string, organization?: string) => void;
+  onRegister: (firstName: string, lastName: string, organization?: string) => void;
+  onRequestAdminAccess?: () => void;
+  isAdminAuthenticated?: boolean;
 }
 
 export const ParticipantView: React.FC<ParticipantViewProps> = ({
   session,
   serverOffsetMs,
   currentUserSpeakerId,
-  onRegister
+  onRegister,
+  onRequestAdminAccess,
+  isAdminAuthenticated
 }) => {
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [organization, setOrganization] = useState('');
 
   // Hook del timer sincronizado
@@ -57,12 +63,12 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
 
   const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
-    onRegister(name, organization);
+    if (!firstName.trim() || !lastName.trim()) return;
+    onRegister(firstName.trim(), lastName.trim(), organization.trim() || undefined);
   };
 
   return (
-    <div className="max-w-md mx-auto p-4 space-y-5 pb-16">
+    <div className="max-w-md mx-auto p-4 space-y-5 pb-20">
       
       {/* MDF Juventudes Mobile Header */}
       <div className="text-center pt-2">
@@ -128,7 +134,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
           </div>
         </div>
       ) : (
-        /* Formulario de Inscripción 1-Tap */
+        /* Formulario de Inscripción con Nombre, Apellido y Organización Opcional */
         session.status === 'REGISTRATION_OPEN' ? (
           <div className="bg-mdf-darkSurface/95 border-2 border-mdf-cyan/40 rounded-3xl p-5 shadow-2xl shadow-mdf-blue/30">
             <div className="text-center mb-4">
@@ -139,35 +145,51 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
                 Anotarme para Hablar
               </h3>
               <p className="text-xs text-slate-400">
-                Ingresa tus datos para entrar en la lista de oradores
+                Ingresa tus datos para ingresar al debate
               </p>
             </div>
 
             <form onSubmit={handleRegisterSubmit} className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
-                  Tu Nombre y Apellido
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Ej: Sofía Martínez"
-                  className="w-full bg-mdf-darkBg border border-mdf-darkBorder focus:border-mdf-cyan rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+                    Nombre <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Tu nombre"
+                    className="w-full bg-mdf-darkBg border border-mdf-darkBorder focus:border-mdf-cyan rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+                    Apellido <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Tu apellido"
+                    className="w-full bg-mdf-darkBg border border-mdf-darkBorder focus:border-mdf-cyan rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500"
+                  />
+                </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
-                  Bloque / Agrupación (Opcional)
+                  Organización / Agrupación <span className="text-slate-500 text-[10px] lowercase">(opcional)</span>
                 </label>
                 <input
                   type="text"
                   value={organization}
                   onChange={(e) => setOrganization(e.target.value)}
-                  placeholder="Ej: Juventudes Zona Sur / Univ."
-                  className="w-full bg-mdf-darkBg border border-mdf-darkBorder focus:border-mdf-cyan rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500"
+                  placeholder="Ej: Juventudes Centro / Univ. / Bloque"
+                  className="w-full bg-mdf-darkBg border border-mdf-darkBorder focus:border-mdf-cyan rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500"
                 />
               </div>
 
@@ -184,7 +206,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
           <div className="bg-mdf-darkSurface/60 border border-slate-800 rounded-3xl p-5 text-center text-slate-400 text-xs">
             <Clock className="w-6 h-6 mx-auto mb-2 text-slate-500" />
             <p className="font-semibold text-slate-300 text-sm mb-1">Inscripciones Cerradas</p>
-            <p>El moderador ha cerrado las anotaciones para este bloque de debate.</p>
+            <p>El moderador abrirá las inscripciones cuando inicie el bloque de oradores.</p>
           </div>
         )
       )}
@@ -208,11 +230,11 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
         />
       </div>
 
-      {/* Próximos Oradores en Lista */}
+      {/* Lista de Oradores del Debate */}
       <div className="bg-mdf-darkSurface/90 border border-mdf-darkBorder rounded-3xl p-5 shadow-xl">
         <div className="flex items-center justify-between text-xs mb-3">
           <span className="font-bold text-white flex items-center gap-1.5">
-            <Users className="w-4 h-4 text-mdf-cyan" /> Orden del Debate
+            <Users className="w-4 h-4 text-mdf-cyan" /> Lista de Oradores
           </span>
           <span className="text-slate-400 font-mono">
             {session.speakers.length} inscriptos
@@ -222,7 +244,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
         <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
           {session.speakers.length === 0 ? (
             <div className="text-center py-4 text-xs text-slate-500">
-              No hay oradores inscriptos todavía.
+              Aún no hay oradores inscriptos.
             </div>
           ) : (
             session.speakers.map((speaker, idx) => {
@@ -259,6 +281,17 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
             })
           )}
         </div>
+      </div>
+
+      {/* Footer discreto para Acceso Moderador */}
+      <div className="text-center pt-4 border-t border-slate-900">
+        <button
+          onClick={onRequestAdminAccess}
+          className="inline-flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-400 transition-colors py-1 px-3 rounded-lg hover:bg-slate-800/40"
+        >
+          <Lock className="w-3.5 h-3.5" />
+          <span>{isAdminAuthenticated ? 'Panel de Moderador (Activo)' : 'Acceso Moderador'}</span>
+        </button>
       </div>
 
     </div>

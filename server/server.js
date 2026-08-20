@@ -44,7 +44,7 @@ function fisherYatesShuffle(array) {
   return result;
 }
 
-// Inicializar una sesión si no existe
+// Inicializar una sesión limpia si no existe
 function getOrCreateSession(sessionId = 'MDF-JUV') {
   if (!sessions.has(sessionId)) {
     const initial = {
@@ -57,52 +57,7 @@ function getOrCreateSession(sessionId = 'MDF-JUV') {
       minSpeakerSeconds: 60,
       maxSpeakerSeconds: 300,
       calculatedSpeakerSeconds: 180,
-      speakers: [
-        {
-          id: 'demo-1',
-          name: 'Camila Rossi',
-          organization: 'Juventudes CABA',
-          registeredAt: Date.now() - 120000,
-          order: 1,
-          status: 'WAITING',
-          isException: false,
-          timeAllocatedSeconds: 180,
-          timeSpokenSeconds: 0
-        },
-        {
-          id: 'demo-2',
-          name: 'Lucas Benítez',
-          organization: 'MDF Universitarios',
-          registeredAt: Date.now() - 90000,
-          order: 2,
-          status: 'WAITING',
-          isException: false,
-          timeAllocatedSeconds: 180,
-          timeSpokenSeconds: 0
-        },
-        {
-          id: 'demo-3',
-          name: 'Sofía Navarro',
-          organization: 'Secretaría de Formación',
-          registeredAt: Date.now() - 60000,
-          order: 3,
-          status: 'WAITING',
-          isException: false,
-          timeAllocatedSeconds: 180,
-          timeSpokenSeconds: 0
-        },
-        {
-          id: 'demo-4',
-          name: 'Martín Albornoz',
-          organization: 'MDF Zona Norte',
-          registeredAt: Date.now() - 30000,
-          order: 4,
-          status: 'WAITING',
-          isException: false,
-          timeAllocatedSeconds: 180,
-          timeSpokenSeconds: 0
-        }
-      ],
+      speakers: [], // Lista inicial 100% limpia sin datos de prueba
       currentSpeakerIndex: -1,
       timer: {
         status: 'IDLE',
