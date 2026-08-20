@@ -9,7 +9,8 @@ import {
   UserCheck, 
   ArrowRight,
   Lock,
-  UserPlus
+  UserPlus,
+  MapPin
 } from 'lucide-react';
 import { triggerHaptic } from '../../utils/sound';
 
@@ -20,6 +21,7 @@ interface ParticipantViewProps {
   myRegisteredSpeakerIds?: string[];
   onRegister: (firstName: string, lastName: string, organization?: string) => void;
   onSelectSpeaker?: (speakerId: string | null) => void;
+  onOpenCommissionSelect?: () => void;
   onRequestAdminAccess?: () => void;
   isAdminAuthenticated?: boolean;
 }
@@ -31,6 +33,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
   myRegisteredSpeakerIds = [],
   onRegister,
   onSelectSpeaker,
+  onOpenCommissionSelect,
   onRequestAdminAccess,
   isAdminAuthenticated
 }) => {
@@ -90,12 +93,24 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
   return (
     <div className="max-w-md mx-auto p-4 space-y-5 pb-20">
       
-      {/* MDF Juventudes Mobile Header */}
+      {/* MDF Juventudes Mobile Header con botón de cambio de comisión */}
       <div className="text-center pt-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-mdf-blue/20 border border-mdf-cyan/30 text-mdf-cyan text-xs font-semibold mb-2">
-          <span className="h-2 w-2 rounded-full bg-mdf-cyan animate-ping" />
-          MDF Juventudes • Comisión en Vivo
+        <div className="flex items-center justify-center gap-2 flex-wrap mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-mdf-blue/20 border border-mdf-cyan/30 text-mdf-cyan text-xs font-semibold">
+            <span className="h-2 w-2 rounded-full bg-mdf-cyan animate-ping" />
+            MDF Juventudes
+          </div>
+
+          <button
+            onClick={onOpenCommissionSelect}
+            className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-mdf-darkSurface hover:bg-slate-800 border border-mdf-cyan/40 text-slate-200 text-xs font-bold transition-all shadow-sm active:scale-95"
+            title="Toca para cambiar de comisión"
+          >
+            <MapPin className="w-3 h-3 text-mdf-cyan" />
+            <span>Cambiar Comisión</span>
+          </button>
         </div>
+
         <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight">
           {session.title}
         </h1>

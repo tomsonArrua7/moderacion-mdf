@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useDebateSocket } from './hooks/useDebateSocket';
 import { Navbar } from './components/layout/Navbar';
 import { QRModal } from './components/layout/QRModal';
+import { CommissionSelectModal } from './components/layout/CommissionSelectModal';
 import { ModeratorDashboard } from './components/moderator/ModeratorDashboard';
 import { ParticipantView } from './components/participant/ParticipantView';
 import { ProjectorView } from './components/projector/ProjectorView';
@@ -9,13 +10,16 @@ import { Lock, Unlock, X } from 'lucide-react';
 
 export function App() {
   const urlParams = new URLSearchParams(window.location.search);
-  const sessionParam = urlParams.get('session') || 'MDF-JUV';
+  const initialSession = urlParams.get('session') || 'COMISION-1';
   const roleParam = urlParams.get('role') as 'moderator' | 'participant' | 'projector' | null;
+
+  const [currentSessionId, setCurrentSessionId] = useState<string>(initialSession);
+  const [isCommissionSelectOpen, setIsCommissionSelectOpen] = useState(false);
 
   // Estado de autenticación de Moderador (guardado en sessionStorage del navegador)
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
-      return sessionStorage.getItem(`mdf_auth_${sessionParam}`) === 'true';
+      return sessionStorage.getItem(`mdf_auth_${currentSessionId}`) === 'true';
     }
     return false;
   });
@@ -48,9 +52,9 @@ export function App() {
     removeSpeaker,
     addExceptionSpeaker,
     resetSession
-  } = useDebateSocket(sessionParam);
+  } = useDebateSocket(currentSessionId);
 
-  // Vista actual: si no está autenticado como admin y pidieron moderator, forzar participant
+  // Vista actual
   const [currentView, setCurrentView] = useState<'moderator' | 'participant' | 'projector'>(() => {
     if (roleParam === 'projector') return 'projector';
     if (roleParam === 'moderator' && isAdminAuthenticated) return 'moderator';
@@ -69,6 +73,19 @@ export function App() {
     const newUrl = new URL(window.location.href);
     newUrl.searchParams.set('role', view);
     newUrl.searchParams.set('session', session.id);
+    window.history.replaceState({}, '', newUrl.toString());
+  };
+
+  // Cambiar de comisión
+  const handleSelectCommission = (newCommissionId: string) => {
+    setCurrentSessionId(newCommissionId);
+    
+    // Verificar si ya estaba autenticado en esa comisión específica
+    const isAuth = typeof window !== 'undefined' && sessionStorage.getItem(`mdf_auth_${newCommissionId}`) === 'true';
+    setIsAdminAuthenticated(isAuth);
+
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set('session', newCommissionId);
     window.history.replaceState({}, '', newUrl.toString());
   };
 
@@ -108,6 +125,7 @@ export function App() {
         onViewChange={handleViewChange}
         isConnected={isConnected || isFirebaseConnected}
         onOpenQR={() => setIsQROpen(true)}
+        onOpenCommissionSelect={() => setIsCommissionSelectOpen(true)}
         isAdminAuthenticated={isAdminAuthenticated}
         onRequestAdminAuth={() => setIsAdminAuthModalOpen(true)}
         onAdminLogout={handleAdminLogout}
@@ -148,6 +166,7 @@ export function App() {
             myRegisteredSpeakerIds={myRegisteredSpeakerIds}
             onRegister={registerSpeaker}
             onSelectSpeaker={selectMySpeaker}
+            onOpenCommissionSelect={() => setIsCommissionSelectOpen(true)}
             onRequestAdminAccess={() => setIsAdminAuthModalOpen(true)}
             isAdminAuthenticated={isAdminAuthenticated}
           />
@@ -212,6 +231,14 @@ export function App() {
           </div>
         </div>
       )}
+
+      {/* Selector de Comisiones */}
+      <CommissionSelectModal
+        isOpen={isCommissionSelectOpen}
+        onClose={() => setIsCommissionSelectOpen(false)}
+        currentCommissionId={session.id}
+        onSelectCommission={handleSelectCommission}
+      />
 
       {/* QR Code Modal */}
       <QRModal

@@ -17,31 +17,38 @@ import {
   saveStoredFirebaseConfig,
   FirebaseConfig 
 } from '../services/firebase';
+import { DEFAULT_COMMISSIONS } from '../types/commissions';
 
-// Estado inicial limpio (sin oradores de prueba)
-export const createInitialSession = (sessionId = 'MDF-JUV'): DebateSession => ({
-  id: sessionId,
-  title: 'Lanzamiento MDF Juventudes - Comisión de Debate',
-  description: 'Debate de propuestas, lineamientos y ejes estratégicos 2026',
-  adminPin: '1234',
-  status: 'CONFIG',
-  totalBlockMinutes: 45,
-  minSpeakerSeconds: 60,
-  maxSpeakerSeconds: 300,
-  calculatedSpeakerSeconds: 180,
-  speakers: [],
-  currentSpeakerIndex: -1,
-  timer: {
-    status: 'IDLE',
-    durationSeconds: 180,
-    startedAt: null,
-    pausedAt: null,
-    accumulatedSeconds: 0,
-    serverTimestamp: Date.now()
-  },
-  createdAt: Date.now(),
-  updatedAt: Date.now()
-});
+// Estado inicial limpio adaptado a la comisión seleccionada
+export const createInitialSession = (sessionId = 'COMISION-1'): DebateSession => {
+  const comm = DEFAULT_COMMISSIONS.find((c) => c.id.toUpperCase() === sessionId.toUpperCase());
+  const title = comm ? `${comm.name} - MDF Juventudes` : `Comisión ${sessionId} - MDF Juventudes`;
+  const description = comm?.topic || 'Debate de propuestas, lineamientos y ejes estratégicos 2026';
+
+  return {
+    id: sessionId,
+    title,
+    description,
+    adminPin: '1234',
+    status: 'CONFIG',
+    totalBlockMinutes: 45,
+    minSpeakerSeconds: 60,
+    maxSpeakerSeconds: 300,
+    calculatedSpeakerSeconds: 180,
+    speakers: [],
+    currentSpeakerIndex: -1,
+    timer: {
+      status: 'IDLE',
+      durationSeconds: 180,
+      startedAt: null,
+      pausedAt: null,
+      accumulatedSeconds: 0,
+      serverTimestamp: Date.now()
+    },
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  };
+};
 
 export const useDebateSocket = (sessionId = 'MDF-JUV') => {
   const [session, setSession] = useState<DebateSession>(() => {

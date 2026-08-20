@@ -8,10 +8,12 @@ import {
   QrCode, 
   Wifi, 
   WifiOff, 
-  Users,
-  Clock,
-  Lock,
-  LogOut
+  Users, 
+  Clock, 
+  Lock, 
+  LogOut,
+  MapPin,
+  ChevronDown
 } from 'lucide-react';
 import { DebateSession } from '../../types/debate';
 import { setSoundEnabled } from '../../utils/sound';
@@ -22,6 +24,7 @@ interface NavbarProps {
   onViewChange: (view: 'moderator' | 'participant' | 'projector') => void;
   isConnected: boolean;
   onOpenQR: () => void;
+  onOpenCommissionSelect?: () => void;
   isAdminAuthenticated: boolean;
   onRequestAdminAuth: () => void;
   onAdminLogout: () => void;
@@ -33,6 +36,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onViewChange,
   isConnected,
   onOpenQR,
+  onOpenCommissionSelect,
   isAdminAuthenticated,
   onRequestAdminAuth,
   onAdminLogout
@@ -68,8 +72,8 @@ export const Navbar: React.FC<NavbarProps> = ({
     <header className="sticky top-0 z-40 bg-[#080E21]/90 backdrop-blur-md border-b border-mdf-darkBorder/60 px-4 py-2.5">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 flex-wrap">
         
-        {/* Brand & Logo MDF */}
-        <div className="flex items-center gap-3">
+        {/* Brand & Selector de Comisión */}
+        <div className="flex items-center gap-2.5">
           <div className="relative flex items-center justify-center h-10 w-10 rounded-xl overflow-hidden shadow-md shadow-mdf-blue/30 border border-mdf-cyan/30 bg-mdf-blue flex-shrink-0">
             <img 
               src="/mdf-logo.jpg" 
@@ -86,14 +90,24 @@ export const Navbar: React.FC<NavbarProps> = ({
                 MDF <span className="text-mdf-cyan ml-1 font-semibold text-xs tracking-widest uppercase bg-mdf-cyan/10 px-1.5 py-0.5 rounded border border-mdf-cyan/30">Juventudes</span>
               </span>
             </div>
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <span className="truncate max-w-[180px] md:max-w-xs font-medium text-slate-300">{session.title}</span>
-            </div>
+            
+            {/* Botón para cambiar de comisión */}
+            <button
+              onClick={onOpenCommissionSelect}
+              className="flex items-center gap-1 text-xs text-slate-300 hover:text-white group transition-colors text-left"
+              title="Cambiar de Comisión de Debate"
+            >
+              <MapPin className="w-3 h-3 text-mdf-cyan group-hover:scale-110 transition-transform" />
+              <span className="truncate max-w-[170px] md:max-w-xs font-semibold underline decoration-mdf-cyan/40 underline-offset-2">
+                {session.title}
+              </span>
+              <ChevronDown className="w-3 h-3 text-mdf-cyan" />
+            </button>
           </div>
         </div>
 
         {/* Status and Info */}
-        <div className="hidden sm:flex items-center gap-2">
+        <div className="hidden lg:flex items-center gap-2">
           {getStatusBadge()}
           <div className="flex items-center gap-1 text-xs text-slate-400 bg-mdf-darkSurface px-2.5 py-1 rounded-lg border border-slate-800">
             <Users className="w-3.5 h-3.5 text-mdf-cyan" />
@@ -110,7 +124,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Navigation Tabs */}
           <div className="flex bg-mdf-darkSurface/90 p-1 rounded-xl border border-mdf-darkBorder">
             
-            {/* Tab Participante (Siempre visible para el público) */}
+            {/* Tab Participante */}
             <button
               onClick={() => onViewChange('participant')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
@@ -124,7 +138,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="hidden md:inline">Participante</span>
             </button>
 
-            {/* Tab Proyector (Visible para público/pantalla) */}
+            {/* Tab Proyector */}
             <button
               onClick={() => onViewChange('projector')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
@@ -138,7 +152,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="hidden md:inline">Proyector</span>
             </button>
 
-            {/* Tab Moderador: Solo visible si está autenticado como Admin, o botón para autenticar */}
+            {/* Tab Moderador: Solo si autenticado como Admin */}
             {isAdminAuthenticated ? (
               <button
                 onClick={() => onViewChange('moderator')}
