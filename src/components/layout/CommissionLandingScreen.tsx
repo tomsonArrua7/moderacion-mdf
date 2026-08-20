@@ -98,25 +98,49 @@ export const CommissionLandingScreen: React.FC<CommissionLandingScreenProps> = (
         </div>
       </div>
 
-      {/* Footer con Accesos Especiales */}
-      <div className="max-w-xl mx-auto w-full pb-4 text-center z-10 border-t border-slate-900 pt-4 flex items-center justify-center gap-4 text-xs text-slate-500">
-        <button
-          onClick={onRequestAdminAccess}
-          className="inline-flex items-center gap-1.5 hover:text-slate-300 transition-colors py-1 px-2.5 rounded-lg hover:bg-slate-800/40"
-        >
-          <Shield className="w-3.5 h-3.5 text-mdf-cyan" />
-          <span>Acceso Moderador</span>
-        </button>
+      {/* Footer con Accesos Especiales e Instructivos PDF */}
+      <div className="max-w-xl mx-auto w-full pb-4 text-center z-10 border-t border-slate-900 pt-4 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 text-xs text-slate-400">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onRequestAdminAccess}
+            className="inline-flex items-center gap-1.5 hover:text-white transition-colors py-1 px-2.5 rounded-lg hover:bg-slate-800/40"
+          >
+            <Shield className="w-3.5 h-3.5 text-mdf-cyan" />
+            <span>Acceso Moderador</span>
+          </button>
 
-        <span>•</span>
+          <span>•</span>
 
-        <button
-          onClick={() => onSelectCommission('COMISION-1', 'projector')}
-          className="inline-flex items-center gap-1.5 hover:text-slate-300 transition-colors py-1 px-2.5 rounded-lg hover:bg-slate-800/40"
-        >
-          <Tv className="w-3.5 h-3.5 text-mdf-cyan" />
-          <span>Vista Proyector</span>
-        </button>
+          <button
+            onClick={() => onSelectCommission('COMISION-1', 'projector')}
+            className="inline-flex items-center gap-1.5 hover:text-white transition-colors py-1 px-2.5 rounded-lg hover:bg-slate-800/40"
+          >
+            <Tv className="w-3.5 h-3.5 text-mdf-cyan" />
+            <span>Vista Proyector</span>
+          </button>
+        </div>
+
+        <span className="hidden sm:inline text-slate-700">•</span>
+
+        <div className="flex items-center gap-3 text-[11px] text-slate-500">
+          <a
+            href="/MANUAL_PARTICIPANTE_MDF_JUVENTUDES.pdf"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-mdf-cyan underline underline-offset-2 transition-colors"
+          >
+            Manual Participante (PDF)
+          </a>
+          <span>•</span>
+          <a
+            href="/MANUAL_MODERADOR_MDF_JUVENTUDES.pdf"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-mdf-cyan underline underline-offset-2 transition-colors"
+          >
+            Manual Moderador (PDF)
+          </a>
+        </div>
       </div>
 
     </div>

@@ -20,9 +20,10 @@ import {
   DoorClosed, 
   RotateCcw, 
   Users, 
-  Clock,
-  QrCode,
-  Cloud
+  Clock, 
+  QrCode, 
+  Cloud,
+  FileText
 } from 'lucide-react';
 import { formatDurationHuman } from '../../utils/timeUtils';
 
@@ -230,6 +231,18 @@ export const ModeratorDashboard: React.FC<ModeratorDashboardProps> = ({
             <span className="hidden sm:inline">QR Móvil</span>
           </button>
 
+          {/* Manual PDF */}
+          <a
+            href="/MANUAL_MODERADOR_MDF_JUVENTUDES.pdf"
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1.5 py-2.5 px-3.5 rounded-xl bg-mdf-darkBg hover:bg-slate-800 border border-mdf-darkBorder text-slate-300 text-xs font-semibold transition-colors"
+            title="Descargar Manual de Instrucciones en PDF"
+          >
+            <FileText className="w-4 h-4 text-mdf-cyan" />
+            <span className="hidden md:inline">Manual PDF</span>
+          </a>
+
           {/* Reiniciar */}
           <button
             onClick={() => {
@@ -245,6 +258,51 @@ export const ModeratorDashboard: React.FC<ModeratorDashboardProps> = ({
 
         </div>
 
+      </div>
+
+      {/* Workflow Stepper: Guía intuitiva de 3 pasos para el moderador */}
+      <div className="bg-mdf-darkSurface/60 border border-mdf-darkBorder/70 rounded-2xl p-3 px-4">
+        <div className="flex items-center justify-between gap-2 overflow-x-auto text-xs">
+          
+          {/* Paso 1 */}
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all ${
+            session.status === 'REGISTRATION_OPEN'
+              ? 'bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40 animate-pulse'
+              : session.status === 'CONFIG'
+              ? 'bg-slate-800 text-slate-300 font-semibold'
+              : 'text-slate-500'
+          }`}>
+            <span className="h-5 w-5 rounded-full bg-emerald-500/30 flex items-center justify-center font-black text-[10px] text-emerald-300">1</span>
+            <span>Inscripciones {session.status === 'REGISTRATION_OPEN' ? '(Abiertas)' : '(Cerradas)'}</span>
+          </div>
+
+          <span className="text-slate-600 font-bold">➔</span>
+
+          {/* Paso 2 */}
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all ${
+            session.status === 'SORTED'
+              ? 'bg-mdf-blue/30 text-mdf-cyan font-bold border border-mdf-cyan/40'
+              : session.status === 'REGISTRATION_CLOSED' && session.speakers.length > 0
+              ? 'bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40 animate-pulse'
+              : 'text-slate-500'
+          }`}>
+            <span className="h-5 w-5 rounded-full bg-mdf-blue/30 flex items-center justify-center font-black text-[10px] text-mdf-cyan">2</span>
+            <span>Sorteo de Oradores {session.status === 'SORTED' ? '✓' : ''}</span>
+          </div>
+
+          <span className="text-slate-600 font-bold">➔</span>
+
+          {/* Paso 3 */}
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all ${
+            session.status === 'DEBATE_ACTIVE'
+              ? 'bg-mdf-blue text-white font-bold shadow-md shadow-mdf-blue/30 animate-pulse'
+              : 'text-slate-500'
+          }`}>
+            <span className="h-5 w-5 rounded-full bg-white/20 flex items-center justify-center font-black text-[10px] text-white">3</span>
+            <span>Debate en Vivo y Cronómetro</span>
+          </div>
+
+        </div>
       </div>
 
       {/* Grid Principal: Reloj en Vivo & Gestión de Oradores */}
