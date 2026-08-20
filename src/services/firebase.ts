@@ -103,6 +103,30 @@ export const initFirebase = (customConfig?: FirebaseConfig): { app: FirebaseApp 
   }
 };
 
+/**
+ * Suscribe a la diferencia de tiempo entre el reloj del dispositivo y el servidor de Firebase
+ * (.info/serverTimeOffset) para eliminar cualquier desfasaje entre PC y móviles.
+ */
+export const subscribeToFirebaseServerOffset = (
+  onOffsetChange: (offsetMs: number) => void,
+  customConfig?: FirebaseConfig
+): (() => void) => {
+  const { db: database } = initFirebase(customConfig);
+  if (!database) return () => {};
+
+  const offsetRef = ref(database, '.info/serverTimeOffset');
+  onValue(offsetRef, (snap) => {
+    const offset = snap.val();
+    if (typeof offset === 'number') {
+      onOffsetChange(offset);
+    }
+  });
+
+  return () => {
+    off(offsetRef);
+  };
+};
+
 export const subscribeToFirebaseSession = (
   sessionId: string,
   onUpdate: (session: DebateSession) => void,

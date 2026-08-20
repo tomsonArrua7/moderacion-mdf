@@ -35,6 +35,10 @@ export const useDebateTimer = (
     }
   }, [timerState?.startedAt]);
 
+  useEffect(() => {
+    setNow(Date.now() + serverOffsetMs);
+  }, [serverOffsetMs]);
+
   // Loop de actualización local a 10Hz (cada 100ms) cuando está corriendo
   useEffect(() => {
     if (!timerState || timerState.status !== 'RUNNING') {

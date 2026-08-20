@@ -11,6 +11,7 @@ import { calculateSpeakerTimeSeconds } from '../utils/timeUtils';
 import { shuffleAndReorderSpeakers } from '../utils/shuffle';
 import { 
   subscribeToFirebaseSession, 
+  subscribeToFirebaseServerOffset,
   syncSessionToFirebase, 
   getStoredFirebaseConfig, 
   saveStoredFirebaseConfig,
@@ -60,6 +61,8 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [isFirebaseConnected, setIsFirebaseConnected] = useState<boolean>(false);
   const [serverOffsetMs, setServerOffsetMs] = useState<number>(0);
+  const serverOffsetRef = useRef<number>(0);
+  serverOffsetRef.current = serverOffsetMs;
   
   // Lista de todos los oradores anotados desde este mismo dispositivo
   const [myRegisteredSpeakerIds, setMyRegisteredSpeakerIds] = useState<string[]>(() => {
@@ -97,7 +100,7 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
     }
   }, [session, sessionId]);
 
-  // Conexión con Firebase Realtime Database si está configurado
+  // Conexión y sincronización de hora con Firebase Realtime Database
   useEffect(() => {
     const fbConfig = getStoredFirebaseConfig();
     if (!fbConfig) {
@@ -105,13 +108,21 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
       return;
     }
 
-    const unsubscribe = subscribeToFirebaseSession(sessionId, (updatedSession) => {
+    // 1. Suscribirse a la sesión
+    const unsubscribeSession = subscribeToFirebaseSession(sessionId, (updatedSession) => {
       setSession(updatedSession);
       setIsFirebaseConnected(true);
     });
 
+    // 2. Suscribirse al offset del servidor de Firebase para eliminar el desfase horario
+    const unsubscribeOffset = subscribeToFirebaseServerOffset((offset) => {
+      setServerOffsetMs(offset);
+      serverOffsetRef.current = offset;
+    });
+
     return () => {
-      unsubscribe();
+      unsubscribeSession();
+      unsubscribeOffset();
     };
   }, [sessionId]);
 
@@ -139,6 +150,7 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
         const latency = (clientRecv - clientSend) / 2;
         const offset = serverTime - (clientRecv - latency);
         setServerOffsetMs(offset);
+        serverOffsetRef.current = offset;
       });
 
       socket.emit('session:join', { sessionId });
@@ -179,7 +191,7 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
     };
   }, [sessionId]);
 
-  // Helper para emitir o aplicar cambio a todos los canales (Firebase + Sockets + Local)
+  // Helper para emitir o aplicar cambio a todos los canales
   const broadcastOrApply = useCallback((updater: (prev: DebateSession) => DebateSession, serverEvent?: string, payload?: unknown) => {
     setSession((prev) => {
       const next = updater(prev);
@@ -217,7 +229,7 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
         id: newId,
         name: fullName,
         organization: organization?.trim() || undefined,
-        registeredAt: Date.now(),
+        registeredAt: Date.now() + serverOffsetRef.current,
         order: prev.speakers.length + 1,
         status: 'WAITING',
         isException: false,
@@ -237,11 +249,10 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
         ...prev,
         speakers: updatedSpeakers,
         calculatedSpeakerSeconds: calculatedSeconds,
-        updatedAt: Date.now()
+        updatedAt: Date.now() + serverOffsetRef.current
       };
     }, 'speaker:register', { name: fullName, organization, speakerId: newId });
 
-    // Guardar en la lista de oradores anotados desde este teléfono
     setMyRegisteredSpeakerIds((prev) => {
       const updated = [...prev, newId];
       if (typeof window !== 'undefined') {
@@ -273,6 +284,10 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
     subscribeToFirebaseSession(sessionId, (updatedSession) => {
       setSession(updatedSession);
       setIsFirebaseConnected(true);
+    }, config);
+    subscribeToFirebaseServerOffset((offset) => {
+      setServerOffsetMs(offset);
+      serverOffsetRef.current = offset;
     }, config);
   }, [sessionId]);
 
@@ -310,7 +325,7 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
           ...prev.timer,
           durationSeconds: prev.timer.status === 'IDLE' ? calculatedSeconds : prev.timer.durationSeconds
         },
-        updatedAt: Date.now()
+        updatedAt: Date.now() + serverOffsetRef.current
       };
     }, 'session:config', params);
   }, [broadcastOrApply]);
@@ -320,7 +335,7 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
     broadcastOrApply((prev) => ({
       ...prev,
       status,
-      updatedAt: Date.now()
+      updatedAt: Date.now() + serverOffsetRef.current
     }), 'session:set_status', { status });
   }, [broadcastOrApply]);
 
@@ -354,13 +369,15 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
           accumulatedSeconds: 0
         },
         currentSpeakerIndex: -1,
-        updatedAt: Date.now()
+        updatedAt: Date.now() + serverOffsetRef.current
       };
     }, 'session:shuffle');
   }, [broadcastOrApply]);
 
   // 5. Iniciar Orador
   const setCurrentSpeaker = useCallback((index: number) => {
+    const trueNow = Date.now() + serverOffsetRef.current;
+    
     broadcastOrApply((prev) => {
       if (index < 0 || index >= prev.speakers.length) return prev;
 
@@ -380,20 +397,21 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
         timer: {
           status: 'RUNNING',
           durationSeconds: duration,
-          startedAt: Date.now(),
+          startedAt: trueNow,
           pausedAt: null,
           accumulatedSeconds: 0,
-          serverTimestamp: Date.now()
+          serverTimestamp: trueNow
         },
-        updatedAt: Date.now()
+        updatedAt: trueNow
       };
     }, 'speaker:set_current', { index });
   }, [broadcastOrApply]);
 
   // 6. Control del Timer
   const controlTimer = useCallback((action: TimerControlPayload['action'], customSeconds?: number) => {
+    const trueNow = Date.now() + serverOffsetRef.current;
+
     broadcastOrApply((prev) => {
-      const now = Date.now();
       const currentTimer = prev.timer;
 
       if (action === 'START' || action === 'RESUME') {
@@ -403,18 +421,18 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
           timer: {
             ...currentTimer,
             status: 'RUNNING',
-            startedAt: now,
+            startedAt: trueNow,
             pausedAt: null,
-            serverTimestamp: now
+            serverTimestamp: trueNow
           },
-          updatedAt: now
+          updatedAt: trueNow
         };
       }
 
       if (action === 'PAUSE') {
         let accumulated = currentTimer.accumulatedSeconds;
         if (currentTimer.startedAt) {
-          accumulated += (now - currentTimer.startedAt) / 1000;
+          accumulated += Math.max(0, (trueNow - currentTimer.startedAt) / 1000);
         }
 
         return {
@@ -423,11 +441,11 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
             ...currentTimer,
             status: 'PAUSED',
             startedAt: null,
-            pausedAt: now,
+            pausedAt: trueNow,
             accumulatedSeconds: accumulated,
-            serverTimestamp: now
+            serverTimestamp: trueNow
           },
-          updatedAt: now
+          updatedAt: trueNow
         };
       }
 
@@ -444,9 +462,9 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
             startedAt: null,
             pausedAt: null,
             accumulatedSeconds: 0,
-            serverTimestamp: now
+            serverTimestamp: trueNow
           },
-          updatedAt: now
+          updatedAt: trueNow
         };
       }
 
@@ -456,9 +474,9 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
           timer: {
             ...currentTimer,
             durationSeconds: currentTimer.durationSeconds + (customSeconds || 30),
-            serverTimestamp: now
+            serverTimestamp: trueNow
           },
-          updatedAt: now
+          updatedAt: trueNow
         };
       }
 
@@ -468,9 +486,9 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
           timer: {
             ...currentTimer,
             durationSeconds: Math.max(10, currentTimer.durationSeconds - (customSeconds || 30)),
-            serverTimestamp: now
+            serverTimestamp: trueNow
           },
-          updatedAt: now
+          updatedAt: trueNow
         };
       }
 
@@ -480,9 +498,9 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
           timer: {
             ...currentTimer,
             durationSeconds: customSeconds,
-            serverTimestamp: now
+            serverTimestamp: trueNow
           },
-          updatedAt: now
+          updatedAt: trueNow
         };
       }
 
@@ -492,6 +510,8 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
 
   // 7. Siguiente / Anterior Orador
   const nextSpeaker = useCallback(() => {
+    const trueNow = Date.now() + serverOffsetRef.current;
+
     broadcastOrApply((prev) => {
       const nextIdx = prev.currentSpeakerIndex + 1;
       if (nextIdx >= prev.speakers.length) {
@@ -502,7 +522,7 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
             ...prev.timer,
             status: 'COMPLETED'
           },
-          updatedAt: Date.now()
+          updatedAt: trueNow
         };
       }
 
@@ -521,17 +541,19 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
         timer: {
           status: 'RUNNING',
           durationSeconds: duration,
-          startedAt: Date.now(),
+          startedAt: trueNow,
           pausedAt: null,
           accumulatedSeconds: 0,
-          serverTimestamp: Date.now()
+          serverTimestamp: trueNow
         },
-        updatedAt: Date.now()
+        updatedAt: trueNow
       };
     }, 'speaker:next');
   }, [broadcastOrApply]);
 
   const prevSpeaker = useCallback(() => {
+    const trueNow = Date.now() + serverOffsetRef.current;
+
     broadcastOrApply((prev) => {
       const prevIdx = Math.max(0, prev.currentSpeakerIndex - 1);
       const duration = prev.speakers[prevIdx].timeAllocatedSeconds || prev.calculatedSpeakerSeconds;
@@ -552,9 +574,9 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
           startedAt: null,
           pausedAt: null,
           accumulatedSeconds: 0,
-          serverTimestamp: Date.now()
+          serverTimestamp: trueNow
         },
-        updatedAt: Date.now()
+        updatedAt: trueNow
       };
     }, 'speaker:prev');
   }, [broadcastOrApply]);
@@ -578,7 +600,7 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
       return {
         ...prev,
         speakers: renumbered,
-        updatedAt: Date.now()
+        updatedAt: Date.now() + serverOffsetRef.current
       };
     }, 'speaker:move', { speakerId, direction });
   }, [broadcastOrApply]);
@@ -590,7 +612,7 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
       return {
         ...prev,
         speakers: updated,
-        updatedAt: Date.now()
+        updatedAt: Date.now() + serverOffsetRef.current
       };
     }, 'speaker:set_status', { speakerId, status });
   }, [broadcastOrApply]);
@@ -611,7 +633,7 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
         ...prev,
         speakers: renumbered,
         calculatedSpeakerSeconds: calculatedSeconds,
-        updatedAt: Date.now()
+        updatedAt: Date.now() + serverOffsetRef.current
       };
     }, 'speaker:remove', { speakerId });
   }, [broadcastOrApply]);
@@ -625,7 +647,7 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
         id: newId,
         name: payload.name.trim(),
         organization: payload.organization?.trim() || undefined,
-        registeredAt: Date.now(),
+        registeredAt: Date.now() + serverOffsetRef.current,
         order: prev.speakers.length + 1,
         status: 'WAITING',
         isException: true,
@@ -645,7 +667,7 @@ export const useDebateSocket = (sessionId = 'MDF-JUV') => {
       return {
         ...prev,
         speakers: renumbered,
-        updatedAt: Date.now()
+        updatedAt: Date.now() + serverOffsetRef.current
       };
     }, 'speaker:add_exception', payload);
   }, [broadcastOrApply]);
