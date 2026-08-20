@@ -5,6 +5,7 @@ import { BigTimerDisplay } from '../timer/BigTimerDisplay';
 import { QRCodeSVG } from 'qrcode.react';
 import { Maximize, Minimize, Users, Mic, Clock } from 'lucide-react';
 import { formatDurationHuman } from '../../utils/timeUtils';
+import { getStoredFirebaseConfig } from '../../services/firebase';
 
 interface ProjectorViewProps {
   session: DebateSession;
@@ -43,9 +44,12 @@ export const ProjectorView: React.FC<ProjectorViewProps> = ({ session, serverOff
     return () => document.removeEventListener('fullscreenchange', handleFsChange);
   }, []);
 
+  const fbConfig = getStoredFirebaseConfig();
+  const dbParam = fbConfig?.databaseURL ? `&db=${encodeURIComponent(fbConfig.databaseURL)}` : '';
+
   const participantUrl = typeof window !== 'undefined'
-    ? `${window.location.protocol}//${window.location.host}/?session=${session.id}&role=participant`
-    : `https://mdf-juventudes.app/?session=${session.id}`;
+    ? `${window.location.protocol}//${window.location.host}/?session=${session.id}&role=participant${dbParam}`
+    : `https://mdf-juventudes.app/?session=${session.id}&role=participant${dbParam}`;
 
   return (
     <div className="min-h-[calc(100vh-60px)] bg-[#060A17] text-white p-4 md:p-8 flex flex-col justify-between select-none relative overflow-hidden">

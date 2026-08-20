@@ -14,6 +14,30 @@ export interface FirebaseConfig {
 
 export const getStoredFirebaseConfig = (): FirebaseConfig | null => {
   if (typeof window !== 'undefined') {
+    // 1. Verificar si viene en la URL (?db=... o ?fb=...)
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const urlDb = params.get('db') || params.get('fb');
+      if (urlDb) {
+        let cleanUrl = decodeURIComponent(urlDb).trim();
+        if (!cleanUrl.startsWith('http')) {
+          cleanUrl = `https://${cleanUrl}.firebaseio.com`;
+        }
+        const cfg: FirebaseConfig = {
+          apiKey: 'AIzaSyDefaultMdfKey',
+          databaseURL: cleanUrl,
+          projectId: cleanUrl.replace('https://', '').split('.')[0] || 'mdf-moderacion',
+          authDomain: 'mdf-moderacion.firebaseapp.com',
+          appId: '1:mdf:web:app'
+        };
+        localStorage.setItem('mdf_firebase_config', JSON.stringify(cfg));
+        return cfg;
+      }
+    } catch {
+      // ignore
+    }
+
+    // 2. Verificar localStorage
     const fromStorage = localStorage.getItem('mdf_firebase_config');
     if (fromStorage) {
       try {
@@ -24,7 +48,7 @@ export const getStoredFirebaseConfig = (): FirebaseConfig | null => {
     }
   }
 
-  // Desde variables de entorno de Vite
+  // 3. Desde variables de entorno de Vite
   const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;
   const databaseURL = import.meta.env.VITE_FIREBASE_DATABASE_URL;
   const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;

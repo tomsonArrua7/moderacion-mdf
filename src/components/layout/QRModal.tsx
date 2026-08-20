@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { X, Copy, Check, ExternalLink, Smartphone } from 'lucide-react';
 import { DebateSession } from '../../types/debate';
+import { getStoredFirebaseConfig } from '../../services/firebase';
 
 interface QRModalProps {
   isOpen: boolean;
@@ -14,10 +15,13 @@ export const QRModal: React.FC<QRModalProps> = ({ isOpen, onClose, session }) =>
 
   if (!isOpen) return null;
 
-  // URL para los participantes
+  const fbConfig = getStoredFirebaseConfig();
+  const dbParam = fbConfig?.databaseURL ? `&db=${encodeURIComponent(fbConfig.databaseURL)}` : '';
+
+  // URL para los participantes con base de datos embebida
   const participantUrl = typeof window !== 'undefined'
-    ? `${window.location.protocol}//${window.location.host}/?session=${session.id}&role=participant`
-    : `https://mdf-juventudes.app/?session=${session.id}&role=participant`;
+    ? `${window.location.protocol}//${window.location.host}/?session=${session.id}&role=participant${dbParam}`
+    : `https://mdf-juventudes.app/?session=${session.id}&role=participant${dbParam}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(participantUrl);
