@@ -23,7 +23,7 @@ import { DEFAULT_COMMISSIONS } from '../types/commissions';
 export const createInitialSession = (sessionId = 'COMISION-1'): DebateSession => {
   const comm = DEFAULT_COMMISSIONS.find((c) => c.id.toUpperCase() === sessionId.toUpperCase());
   const title = comm ? `${comm.name} - MDF Juventudes` : `Comisión ${sessionId} - MDF Juventudes`;
-  const description = comm?.topic || 'Debate de propuestas, lineamientos y ejes estratégicos 2026';
+  const description = comm?.description || 'Debate de propuestas, lineamientos y ejes estratégicos 2026';
 
   return {
     id: sessionId,

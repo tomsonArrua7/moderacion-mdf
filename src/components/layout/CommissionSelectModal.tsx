@@ -23,7 +23,6 @@ export const CommissionSelectModal: React.FC<CommissionSelectModalProps> = ({
   const filteredCommissions = DEFAULT_COMMISSIONS.filter(
     (c) =>
       c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.topic?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -39,7 +38,7 @@ export const CommissionSelectModal: React.FC<CommissionSelectModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-      <div className="relative w-full max-w-2xl bg-[#0F1A38] border border-mdf-cyan/30 rounded-3xl p-6 md:p-8 shadow-2xl shadow-mdf-blue/40 overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-xl bg-[#0F1A38] border border-mdf-cyan/30 rounded-3xl p-6 md:p-8 shadow-2xl shadow-mdf-blue/40 overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-mdf-darkBorder mb-4">
@@ -69,16 +68,16 @@ export const CommissionSelectModal: React.FC<CommissionSelectModalProps> = ({
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar comisión por número, nombre o tema..."
+            placeholder="Buscar comisión por número (ej: 1, 2, 15)..."
             className="w-full bg-mdf-darkBg border border-mdf-darkBorder focus:border-mdf-cyan rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500"
           />
         </div>
 
-        {/* Grid de Comisiones */}
+        {/* Grid de las 15 Comisiones */}
         <div className="flex-1 overflow-y-auto space-y-2 pr-1 mb-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
             {filteredCommissions.map((comm) => {
-              const isSelected = currentCommissionId === comm.id;
+              const isSelected = currentCommissionId.toUpperCase() === comm.id.toUpperCase();
 
               return (
                 <button
@@ -87,28 +86,25 @@ export const CommissionSelectModal: React.FC<CommissionSelectModalProps> = ({
                     onSelectCommission(comm.id);
                     onClose();
                   }}
-                  className={`p-3.5 rounded-2xl text-left transition-all border flex flex-col justify-between ${
+                  className={`p-3.5 rounded-2xl text-center transition-all border flex flex-col items-center justify-center gap-1 min-h-[72px] ${
                     isSelected
-                      ? 'bg-mdf-blue text-white border-mdf-cyan shadow-lg shadow-mdf-blue/40 ring-1 ring-mdf-cyan'
-                      : 'bg-mdf-darkBg/90 hover:bg-slate-800/80 border-mdf-darkBorder text-slate-300'
+                      ? 'bg-mdf-blue text-white border-mdf-cyan shadow-lg shadow-mdf-blue/40 ring-2 ring-mdf-cyan'
+                      : 'bg-mdf-darkBg/90 hover:bg-slate-800/80 border-mdf-darkBorder text-slate-300 hover:border-slate-600'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className={`text-xs font-black uppercase tracking-wider ${isSelected ? 'text-white' : 'text-mdf-cyan'}`}>
-                      {comm.name}
+                  <span className={`text-sm font-black tracking-tight ${isSelected ? 'text-white' : 'text-slate-100'}`}>
+                    {comm.name}
+                  </span>
+                  
+                  {isSelected ? (
+                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-mdf-cyan">
+                      <Check className="w-3 h-3" /> Activa
                     </span>
-                    {isSelected && (
-                      <span className="p-0.5 rounded-full bg-white text-mdf-blue">
-                        <Check className="w-3.5 h-3.5" />
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-xs font-medium line-clamp-2 text-slate-200">
-                    {comm.topic}
-                  </div>
-                  <div className={`text-[10px] mt-2 font-mono ${isSelected ? 'text-blue-100' : 'text-slate-500'}`}>
-                    Código: #{comm.id}
-                  </div>
+                  ) : (
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      #{comm.id.replace('COMISION-', 'C')}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -116,7 +112,7 @@ export const CommissionSelectModal: React.FC<CommissionSelectModalProps> = ({
 
           {filteredCommissions.length === 0 && (
             <div className="text-center py-8 text-xs text-slate-400">
-              No se encontraron comisiones predefinidas con esa búsqueda.
+              No se encontró esa comisión.
             </div>
           )}
         </div>
@@ -128,7 +124,7 @@ export const CommissionSelectModal: React.FC<CommissionSelectModalProps> = ({
               type="text"
               value={customCode}
               onChange={(e) => setCustomCode(e.target.value)}
-              placeholder="O escribe otro código de comisión (ej: MESA-SALUD-A)"
+              placeholder="O escribe otro número o sala (ej: COMISION-16)"
               className="flex-1 bg-mdf-darkBg border border-mdf-darkBorder focus:border-mdf-cyan rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 font-mono"
             />
             <button
@@ -136,7 +132,7 @@ export const CommissionSelectModal: React.FC<CommissionSelectModalProps> = ({
               className="flex items-center gap-1.5 py-2.5 px-4 rounded-xl bg-mdf-darkSurface hover:bg-slate-800 border border-mdf-darkBorder text-mdf-cyan hover:text-white text-xs font-bold transition-colors"
             >
               <Plus className="w-4 h-4" />
-              <span>Ingresar</span>
+              <span>Entrar</span>
             </button>
           </form>
         </div>
