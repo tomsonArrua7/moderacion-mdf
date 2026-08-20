@@ -12,7 +12,6 @@ export interface FirebaseConfig {
   appId?: string;
 }
 
-// Obtener configuración desde variables de entorno o localStorage
 export const getStoredFirebaseConfig = (): FirebaseConfig | null => {
   if (typeof window !== 'undefined') {
     const fromStorage = localStorage.getItem('mdf_firebase_config');
@@ -30,13 +29,13 @@ export const getStoredFirebaseConfig = (): FirebaseConfig | null => {
   const databaseURL = import.meta.env.VITE_FIREBASE_DATABASE_URL;
   const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
 
-  if (apiKey && (databaseURL || projectId)) {
+  if (databaseURL || (apiKey && projectId)) {
     return {
-      apiKey,
+      apiKey: apiKey || 'AIzaSyDefaultMdfKey',
       databaseURL: databaseURL || `https://${projectId}-default-rtdb.firebaseio.com`,
-      projectId,
-      authDomain: `${projectId}.firebaseapp.com`,
-      appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:123456789:web:abcdef'
+      projectId: projectId || 'mdf-moderacion',
+      authDomain: `${projectId || 'mdf-moderacion'}.firebaseapp.com`,
+      appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:mdf:web:app'
     };
   }
 
@@ -54,13 +53,21 @@ let db: Database | null = null;
 
 export const initFirebase = (customConfig?: FirebaseConfig): { app: FirebaseApp | null; db: Database | null } => {
   const config = customConfig || getStoredFirebaseConfig();
-  if (!config || !config.apiKey || (!config.databaseURL && !config.projectId)) {
+  if (!config || (!config.databaseURL && !config.projectId)) {
     return { app: null, db: null };
   }
 
+  const effectiveConfig = {
+    apiKey: config.apiKey || 'AIzaSyDefaultMdfKey',
+    databaseURL: config.databaseURL || `https://${config.projectId}-default-rtdb.firebaseio.com`,
+    projectId: config.projectId || 'mdf-moderacion',
+    authDomain: `${config.projectId || 'mdf-moderacion'}.firebaseapp.com`,
+    appId: config.appId || '1:mdf:web:app'
+  };
+
   try {
     if (!getApps().length) {
-      app = initializeApp(config);
+      app = initializeApp(effectiveConfig);
     } else {
       app = getApps()[0];
     }
@@ -72,9 +79,6 @@ export const initFirebase = (customConfig?: FirebaseConfig): { app: FirebaseApp 
   }
 };
 
-/**
- * Escucha cambios en tiempo real en la sesión de Firebase Realtime Database
- */
 export const subscribeToFirebaseSession = (
   sessionId: string,
   onUpdate: (session: DebateSession) => void,
@@ -88,7 +92,6 @@ export const subscribeToFirebaseSession = (
   onValue(sessionRef, (snapshot) => {
     const data = snapshot.val();
     if (data) {
-      // Firebase convierte arreglos vacíos o con índices en objetos a veces
       if (data.speakers && !Array.isArray(data.speakers)) {
         data.speakers = Object.values(data.speakers);
       } else if (!data.speakers) {
@@ -103,9 +106,6 @@ export const subscribeToFirebaseSession = (
   };
 };
 
-/**
- * Guarda o actualiza la sesión en Firebase Realtime Database
- */
 export const syncSessionToFirebase = async (session: DebateSession, customConfig?: FirebaseConfig): Promise<boolean> => {
   const { db: database } = initFirebase(customConfig);
   if (!database) return false;
