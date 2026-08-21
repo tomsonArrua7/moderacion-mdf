@@ -281,7 +281,6 @@ export function App() {
             onRegister={registerSpeaker}
             onSelectSpeaker={selectMySpeaker}
             onOpenCommissionSelect={() => setIsCommissionSelectOpen(true)}
-            onOpenDebateGuide={() => setIsDebateGuideOpen(true)}
             onRequestAdminAccess={() => setIsAdminAuthModalOpen(true)}
             isAdminAuthenticated={isAdminAuthenticated}
           />

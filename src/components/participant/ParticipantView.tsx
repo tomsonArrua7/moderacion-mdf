@@ -10,8 +10,7 @@ import {
   ArrowRight,
   Lock,
   UserPlus,
-  MapPin,
-  BookOpen
+  MapPin
 } from 'lucide-react';
 import { triggerHaptic } from '../../utils/sound';
 
@@ -23,7 +22,6 @@ interface ParticipantViewProps {
   onRegister: (firstName: string, lastName: string, organization?: string) => void;
   onSelectSpeaker?: (speakerId: string | null) => void;
   onOpenCommissionSelect?: () => void;
-  onOpenDebateGuide?: () => void;
   onRequestAdminAccess?: () => void;
   isAdminAuthenticated?: boolean;
 }
@@ -36,7 +34,6 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
   onRegister,
   onSelectSpeaker,
   onOpenCommissionSelect,
-  onOpenDebateGuide,
   onRequestAdminAccess,
   isAdminAuthenticated
 }) => {
@@ -120,16 +117,6 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
         {session.description && (
           <p className="text-xs text-slate-400 mt-1">{session.description}</p>
         )}
-
-        <div className="mt-2.5">
-          <button
-            onClick={onOpenDebateGuide}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-mdf-blue/20 hover:bg-mdf-blue/30 border border-mdf-cyan/40 text-mdf-cyan text-xs font-bold transition-all shadow-sm active:scale-95"
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>Ver Preguntas y Ejes de Debate</span>
-          </button>
-        </div>
       </div>
 
       {/* Selector de perfil si anotó a más de una persona desde este móvil */}

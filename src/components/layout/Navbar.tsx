@@ -193,14 +193,16 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           )}
 
-          {/* Botón de Guía / Preguntas de Debate */}
-          <button
-            onClick={onOpenDebateGuide}
-            className="p-2 rounded-xl bg-mdf-darkSurface hover:bg-mdf-blue/20 text-slate-300 hover:text-mdf-cyan border border-mdf-darkBorder hover:border-mdf-cyan/40 transition-colors"
-            title="Ver Preguntas y Documento de Debate"
-          >
-            <BookOpen className="w-4 h-4" />
-          </button>
+          {/* Botón de Guía / Preguntas de Debate (solo visible para moderadores) */}
+          {isAdminAuthenticated && currentView === 'moderator' && (
+            <button
+              onClick={onOpenDebateGuide}
+              className="p-2 rounded-xl bg-mdf-darkSurface hover:bg-mdf-blue/20 text-slate-300 hover:text-mdf-cyan border border-mdf-darkBorder hover:border-mdf-cyan/40 transition-colors"
+              title="Ver Preguntas y Documento de Debate"
+            >
+              <BookOpen className="w-4 h-4" />
+            </button>
+          )}
 
           {/* QR Button */}
           <button
