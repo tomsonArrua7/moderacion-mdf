@@ -22,6 +22,7 @@ export interface Speaker {
   order: number;               // Posición en la lista (1, 2, 3...)
   status: SpeakerStatus;
   isException: boolean;        // Agregado manualmente fuera de lista regular
+  isLate?: boolean;            // Agregado después del cierre de lista oficial
   timeAllocatedSeconds: number;// Tiempo asignado para este orador
   timeSpokenSeconds: number;   // Tiempo consumido
 }
@@ -38,21 +39,24 @@ export interface TimerState {
 }
 
 export interface DebateSession {
-  id: string;                        // Código de sesión (ej: "MDF-JUV")
+  id: string;                        // Código de sesión (ej: "COMISION-1")
   title: string;                     // Tema del debate (ej: "Lanzamiento MDF Juventudes - Plan de Acción")
   description?: string;              // Descripción u observaciones
-  adminPin: string;                  // PIN de moderación (ej: "1234")
+  adminPin: string;                  // PIN de moderación (ej: "moderador2026")
   status: SessionStatus;
   
   // Parámetros de tiempo del bloque
   totalBlockMinutes: number;         // Tiempo total del bloque (ej: 45 min)
   minSpeakerSeconds: number;         // Mínimo por orador (default: 60s)
-  maxSpeakerSeconds: number;         // Máximo por orador (default: 300s = 5m)
+  maxSpeakerSeconds: number;         // Máximo por orador (default: 180s = 3m)
   calculatedSpeakerSeconds: number;  // Tiempo calculado por orador (total / N)
   
-  // Lista de oradores
+  // Lista oficial de oradores
   speakers: Speaker[];
   currentSpeakerIndex: number;       // Índice del orador actual en speakers[] (-1 si ninguno)
+
+  // Lista de inscriptos que se agregaron después del cierre de lista
+  lateSpeakers: Speaker[];
   
   // Estado del Cronómetro
   timer: TimerState;

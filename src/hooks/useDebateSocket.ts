@@ -36,6 +36,7 @@ export const createInitialSession = (sessionId = 'COMISION-1'): DebateSession =>
     maxSpeakerSeconds: 180,
     calculatedSpeakerSeconds: 120,
     speakers: [],
+    lateSpeakers: [],
     currentSpeakerIndex: -1,
     timer: {
       status: 'IDLE',
@@ -59,7 +60,10 @@ export const useDebateSocket = (sessionId = 'COMISION-1') => {
         try {
           const parsed = JSON.parse(saved);
           if (parsed && parsed.id === id) {
-            return parsed;
+            return {
+              ...parsed,
+              lateSpeakers: parsed.lateSpeakers || []
+            };
           }
         } catch {
           // fallback
@@ -145,7 +149,10 @@ export const useDebateSocket = (sessionId = 'COMISION-1') => {
     // 1. Suscribirse a la sesión de esta comisión
     const unsubscribeSession = subscribeToFirebaseSession(sessionId, (updatedSession) => {
       if (updatedSession) {
-        setSession(updatedSession);
+        setSession({
+          ...updatedSession,
+          lateSpeakers: updatedSession.lateSpeakers || []
+        });
         setIsFirebaseConnected(true);
       } else {
         // Si no existe aún en Firebase, sincronizar el estado inicial para que exista
@@ -208,7 +215,10 @@ export const useDebateSocket = (sessionId = 'COMISION-1') => {
 
     socket.on('session:state', (updatedSession: DebateSession) => {
       if (updatedSession.id === sessionId) {
-        setSession(updatedSession);
+        setSession({
+          ...updatedSession,
+          lateSpeakers: updatedSession.lateSpeakers || []
+        });
       }
     });
 
@@ -224,7 +234,10 @@ export const useDebateSocket = (sessionId = 'COMISION-1') => {
     if (bc) {
       bc.onmessage = (event) => {
         if (event.data && event.data.type === 'SESSION_UPDATE' && event.data.session.id === sessionId) {
-          setSession(event.data.session);
+          setSession({
+            ...event.data.session,
+            lateSpeakers: event.data.session.lateSpeakers || []
+          });
         }
       };
     }
@@ -263,39 +276,86 @@ export const useDebateSocket = (sessionId = 'COMISION-1') => {
     });
   }, [sessionId]);
 
-  // 1. Registro de Participante
-  const registerSpeaker = useCallback((firstName: string, lastName: string, organization?: string): string => {
+  // 1. Registro de Participante (con detección de duplicados y apartado para agregados posteriores)
+  const registerSpeaker = useCallback((
+    firstName: string, 
+    lastName: string, 
+    organization?: string,
+    allowDuplicate = false
+  ): { success: boolean; speakerId?: string; isDuplicate?: boolean; isLate?: boolean; existingName?: string } => {
     const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
-    const newId = 'spk_' + Math.random().toString(36).substr(2, 9);
+    const cleanLower = fullName.toLowerCase();
     
+    // Verificar si ya existe en la lista oficial o en la lista posterior
+    const duplicateInSpeakers = session.speakers?.find(s => s.name.trim().toLowerCase() === cleanLower);
+    const duplicateInLate = session.lateSpeakers?.find(s => s.name.trim().toLowerCase() === cleanLower);
+    
+    if (!allowDuplicate && (duplicateInSpeakers || duplicateInLate)) {
+      return { 
+        success: false, 
+        isDuplicate: true, 
+        existingName: duplicateInSpeakers ? duplicateInSpeakers.name : duplicateInLate?.name 
+      };
+    }
+
+    const newId = 'spk_' + Math.random().toString(36).substr(2, 9);
+    const isLateRegistration = session.status !== 'REGISTRATION_OPEN';
+
     broadcastOrApply((prev) => {
-      const newSpeaker: Speaker = {
-        id: newId,
-        name: fullName,
-        organization: organization?.trim() || undefined,
-        registeredAt: Date.now() + serverOffsetRef.current,
-        order: prev.speakers.length + 1,
-        status: 'WAITING',
-        isException: false,
-        timeAllocatedSeconds: prev.calculatedSpeakerSeconds,
-        timeSpokenSeconds: 0
-      };
+      const trueNow = Date.now() + serverOffsetRef.current;
+      const currentLate = prev.lateSpeakers || [];
 
-      const updatedSpeakers = [...prev.speakers, newSpeaker];
-      const calculatedSeconds = calculateSpeakerTimeSeconds(
-        prev.totalBlockMinutes,
-        updatedSpeakers.length,
-        prev.minSpeakerSeconds,
-        prev.maxSpeakerSeconds
-      );
+      if (isLateRegistration) {
+        // Se agrega al listado especial "Se agregaron después para hablar"
+        const newLateSpeaker: Speaker = {
+          id: newId,
+          name: fullName,
+          organization: organization?.trim() || undefined,
+          registeredAt: trueNow,
+          order: currentLate.length + 1,
+          status: 'WAITING',
+          isException: false,
+          isLate: true,
+          timeAllocatedSeconds: prev.calculatedSpeakerSeconds,
+          timeSpokenSeconds: 0
+        };
 
-      return {
-        ...prev,
-        speakers: updatedSpeakers,
-        calculatedSpeakerSeconds: calculatedSeconds,
-        updatedAt: Date.now() + serverOffsetRef.current
-      };
-    }, 'speaker:register', { name: fullName, organization, speakerId: newId });
+        return {
+          ...prev,
+          lateSpeakers: [...currentLate, newLateSpeaker],
+          updatedAt: trueNow
+        };
+      } else {
+        // Registro regular en lista abierta oficial
+        const newSpeaker: Speaker = {
+          id: newId,
+          name: fullName,
+          organization: organization?.trim() || undefined,
+          registeredAt: trueNow,
+          order: prev.speakers.length + 1,
+          status: 'WAITING',
+          isException: false,
+          isLate: false,
+          timeAllocatedSeconds: prev.calculatedSpeakerSeconds,
+          timeSpokenSeconds: 0
+        };
+
+        const updatedSpeakers = [...prev.speakers, newSpeaker];
+        const calculatedSeconds = calculateSpeakerTimeSeconds(
+          prev.totalBlockMinutes,
+          updatedSpeakers.length,
+          prev.minSpeakerSeconds,
+          prev.maxSpeakerSeconds
+        );
+
+        return {
+          ...prev,
+          speakers: updatedSpeakers,
+          calculatedSpeakerSeconds: calculatedSeconds,
+          updatedAt: trueNow
+        };
+      }
+    }, 'speaker:register', { name: fullName, organization, speakerId: newId, isLate: isLateRegistration });
 
     setMyRegisteredSpeakerIds((prev) => {
       const updated = [...prev, newId];
@@ -307,8 +367,8 @@ export const useDebateSocket = (sessionId = 'COMISION-1') => {
     });
 
     setCurrentUserSpeakerId(newId);
-    return newId;
-  }, [broadcastOrApply, sessionId]);
+    return { success: true, speakerId: newId, isLate: isLateRegistration };
+  }, [broadcastOrApply, sessionId, session.speakers, session.lateSpeakers, session.status]);
 
   // Cambiar de perfil visualizado en este teléfono
   const selectMySpeaker = useCallback((speakerId: string | null) => {
@@ -327,7 +387,10 @@ export const useDebateSocket = (sessionId = 'COMISION-1') => {
     saveStoredFirebaseConfig(config);
     subscribeToFirebaseSession(sessionId, (updatedSession) => {
       if (updatedSession) {
-        setSession(updatedSession);
+        setSession({
+          ...updatedSession,
+          lateSpeakers: updatedSession.lateSpeakers || []
+        });
         setIsFirebaseConnected(true);
       }
     }, config);
@@ -362,7 +425,7 @@ export const useDebateSocket = (sessionId = 'COMISION-1') => {
         ...prev,
         title: params.title ?? prev.title,
         description: params.description ?? prev.description,
-        adminPin: params.adminPin ?? prev.adminPin,
+        adminPin: 'moderador2026',
         totalBlockMinutes,
         minSpeakerSeconds,
         maxSpeakerSeconds,
@@ -663,7 +726,7 @@ export const useDebateSocket = (sessionId = 'COMISION-1') => {
     }, 'speaker:set_status', { speakerId, status });
   }, [broadcastOrApply]);
 
-  // 10. Eliminar Orador
+  // 10. Eliminar Orador Oficial
   const removeSpeaker = useCallback((speakerId: string) => {
     broadcastOrApply((prev) => {
       const filtered = prev.speakers.filter((s) => s.id !== speakerId);
@@ -697,6 +760,7 @@ export const useDebateSocket = (sessionId = 'COMISION-1') => {
         order: prev.speakers.length + 1,
         status: 'WAITING',
         isException: true,
+        isLate: false,
         timeAllocatedSeconds: prev.calculatedSpeakerSeconds,
         timeSpokenSeconds: 0
       };
@@ -718,14 +782,64 @@ export const useDebateSocket = (sessionId = 'COMISION-1') => {
     }, 'speaker:add_exception', payload);
   }, [broadcastOrApply]);
 
-  // 12. Reiniciar Bloque
+  // 12. Sumar orador posterior al debate oficial
+  const addLateSpeakerToQueue = useCallback((speakerId: string, position: 'END' | 'NEXT' = 'END') => {
+    broadcastOrApply((prev) => {
+      const currentLate = prev.lateSpeakers || [];
+      const targetSpeaker = currentLate.find(s => s.id === speakerId);
+      if (!targetSpeaker) return prev;
+
+      const remainingLate = currentLate.filter(s => s.id !== speakerId)
+        .map((s, idx) => ({ ...s, order: idx + 1 }));
+
+      const speakerToInsert: Speaker = {
+        ...targetSpeaker,
+        isException: true,
+        timeAllocatedSeconds: prev.calculatedSpeakerSeconds,
+        status: 'WAITING'
+      };
+
+      let updatedSpeakers = [...prev.speakers];
+      if (position === 'NEXT' && prev.currentSpeakerIndex >= 0) {
+        updatedSpeakers.splice(prev.currentSpeakerIndex + 1, 0, speakerToInsert);
+      } else {
+        updatedSpeakers.push(speakerToInsert);
+      }
+
+      const renumbered = updatedSpeakers.map((s, idx) => ({ ...s, order: idx + 1 }));
+
+      return {
+        ...prev,
+        speakers: renumbered,
+        lateSpeakers: remainingLate,
+        updatedAt: Date.now() + serverOffsetRef.current
+      };
+    }, 'speaker:add_late', { speakerId, position });
+  }, [broadcastOrApply]);
+
+  // 13. Eliminar orador posterior
+  const removeLateSpeaker = useCallback((speakerId: string) => {
+    broadcastOrApply((prev) => {
+      const currentLate = prev.lateSpeakers || [];
+      const filtered = currentLate.filter(s => s.id !== speakerId)
+        .map((s, idx) => ({ ...s, order: idx + 1 }));
+
+      return {
+        ...prev,
+        lateSpeakers: filtered,
+        updatedAt: Date.now() + serverOffsetRef.current
+      };
+    }, 'speaker:remove_late', { speakerId });
+  }, [broadcastOrApply]);
+
+  // 14. Reiniciar Bloque
   const resetSession = useCallback(() => {
     broadcastOrApply((prev) => {
       return {
         ...createInitialSession(prev.id),
         title: prev.title,
         totalBlockMinutes: prev.totalBlockMinutes,
-        adminPin: prev.adminPin
+        adminPin: 'moderador2026'
       };
     }, 'session:reset');
   }, [broadcastOrApply]);
@@ -753,6 +867,8 @@ export const useDebateSocket = (sessionId = 'COMISION-1') => {
     updateSpeakerStatus,
     removeSpeaker,
     addExceptionSpeaker,
+    addLateSpeakerToQueue,
+    removeLateSpeaker,
     resetSession
   };
 };

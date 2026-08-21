@@ -145,6 +145,11 @@ export const subscribeToFirebaseSession = (
       } else if (!data.speakers) {
         data.speakers = [];
       }
+      if (data.lateSpeakers && !Array.isArray(data.lateSpeakers)) {
+        data.lateSpeakers = Object.values(data.lateSpeakers);
+      } else if (!data.lateSpeakers) {
+        data.lateSpeakers = [];
+      }
       onUpdate(data as DebateSession);
     } else {
       onUpdate(null);

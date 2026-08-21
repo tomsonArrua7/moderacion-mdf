@@ -49,6 +49,8 @@ interface ModeratorDashboardProps {
   onUpdateSpeakerStatus: (speakerId: string, status: SpeakerStatus) => void;
   onRemoveSpeaker: (speakerId: string) => void;
   onAddExceptionSpeaker: (payload: AddExceptionSpeakerPayload) => void;
+  onAddLateSpeakerToQueue?: (speakerId: string, position: 'END' | 'NEXT') => void;
+  onRemoveLateSpeaker?: (speakerId: string) => void;
   onResetSession: () => void;
   onOpenQR: () => void;
   onOpenDebateGuide?: () => void;
@@ -70,6 +72,8 @@ export const ModeratorDashboard: React.FC<ModeratorDashboardProps> = ({
   onUpdateSpeakerStatus,
   onRemoveSpeaker,
   onAddExceptionSpeaker,
+  onAddLateSpeakerToQueue,
+  onRemoveLateSpeaker,
   onResetSession,
   onOpenQR,
   onOpenDebateGuide
@@ -300,6 +304,7 @@ export const ModeratorDashboard: React.FC<ModeratorDashboardProps> = ({
         <div className="lg:col-span-7">
           <SpeakerQueueManager
             speakers={session.speakers}
+            lateSpeakers={session.lateSpeakers || []}
             currentSpeakerIndex={session.currentSpeakerIndex}
             calculatedSpeakerSeconds={session.calculatedSpeakerSeconds}
             onSetCurrentSpeaker={onSetCurrentSpeaker}
@@ -307,6 +312,8 @@ export const ModeratorDashboard: React.FC<ModeratorDashboardProps> = ({
             onUpdateStatus={onUpdateSpeakerStatus}
             onRemoveSpeaker={onRemoveSpeaker}
             onAddExceptionSpeaker={onAddExceptionSpeaker}
+            onAddLateSpeakerToQueue={onAddLateSpeakerToQueue}
+            onRemoveLateSpeaker={onRemoveLateSpeaker}
             onShuffle={onShuffleSpeakers}
           />
         </div>

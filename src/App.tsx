@@ -57,6 +57,8 @@ export function App() {
     updateSpeakerStatus,
     removeSpeaker,
     addExceptionSpeaker,
+    addLateSpeakerToQueue,
+    removeLateSpeaker,
     resetSession
   } = useDebateSocket(currentSessionId);
 
@@ -263,6 +265,8 @@ export function App() {
             onUpdateSpeakerStatus={updateSpeakerStatus}
             onRemoveSpeaker={removeSpeaker}
             onAddExceptionSpeaker={addExceptionSpeaker}
+            onAddLateSpeakerToQueue={addLateSpeakerToQueue}
+            onRemoveLateSpeaker={removeLateSpeaker}
             onResetSession={resetSession}
             onOpenQR={() => setIsQROpen(true)}
             onOpenDebateGuide={() => setIsDebateGuideOpen(true)}
