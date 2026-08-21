@@ -24,7 +24,8 @@ export function App() {
   // Estado de autenticación de Moderador
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
-      return sessionStorage.getItem(`mdf_auth_${currentSessionId}`) === 'true';
+      return sessionStorage.getItem(`mdf_auth_${currentSessionId}`) === 'true' ||
+             sessionStorage.getItem('mdf_auth_global') === 'true';
     }
     return false;
   });
@@ -89,7 +90,10 @@ export function App() {
     setCurrentSessionId(newCommissionId);
     setHasSelectedCommission(true);
 
-    const isAuth = typeof window !== 'undefined' && sessionStorage.getItem(`mdf_auth_${newCommissionId}`) === 'true';
+    const isAuth = typeof window !== 'undefined' && (
+      sessionStorage.getItem(`mdf_auth_${newCommissionId}`) === 'true' ||
+      sessionStorage.getItem('mdf_auth_global') === 'true'
+    );
     setIsAdminAuthenticated(isAuth);
 
     const targetRole = preferredRole === 'moderator' && !isAuth ? 'participant' : preferredRole;
@@ -110,7 +114,10 @@ export function App() {
     setCurrentSessionId(newCommissionId);
     setHasSelectedCommission(true);
     
-    const isAuth = typeof window !== 'undefined' && sessionStorage.getItem(`mdf_auth_${newCommissionId}`) === 'true';
+    const isAuth = typeof window !== 'undefined' && (
+      sessionStorage.getItem(`mdf_auth_${newCommissionId}`) === 'true' ||
+      sessionStorage.getItem('mdf_auth_global') === 'true'
+    );
     setIsAdminAuthenticated(isAuth);
 
     const newUrl = new URL(window.location.href);
@@ -129,9 +136,14 @@ export function App() {
       setPinInput('');
       if (typeof window !== 'undefined') {
         sessionStorage.setItem(`mdf_auth_${session.id}`, 'true');
+        sessionStorage.setItem('mdf_auth_global', 'true');
       }
       setHasSelectedCommission(true);
-      handleViewChange('moderator');
+      setCurrentView('moderator');
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('role', 'moderator');
+      newUrl.searchParams.set('session', session.id);
+      window.history.replaceState({}, '', newUrl.toString());
     } else {
       setPinError(true);
     }
@@ -141,6 +153,7 @@ export function App() {
     setIsAdminAuthenticated(false);
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem(`mdf_auth_${session.id}`);
+      sessionStorage.removeItem('mdf_auth_global');
     }
     handleViewChange('participant');
   };

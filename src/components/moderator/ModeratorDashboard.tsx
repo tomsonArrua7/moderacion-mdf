@@ -13,8 +13,6 @@ import { BlockConfigModal } from './BlockConfigModal';
 import { CloudSyncModal } from './CloudSyncModal';
 import { FirebaseConfig } from '../../services/firebase';
 import { 
-  Lock, 
-  Unlock, 
   Settings, 
   DoorOpen, 
   DoorClosed, 
@@ -76,14 +74,6 @@ export const ModeratorDashboard: React.FC<ModeratorDashboardProps> = ({
   onOpenQR,
   onOpenDebateGuide
 }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      return sessionStorage.getItem(`mdf_auth_${session.id}`) === 'true';
-    }
-    return false;
-  });
-  const [pinInput, setPinInput] = useState('');
-  const [pinError, setPinError] = useState(false);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
 
@@ -93,64 +83,6 @@ export const ModeratorDashboard: React.FC<ModeratorDashboardProps> = ({
   const currentSpeaker = session.currentSpeakerIndex >= 0 
     ? session.speakers[session.currentSpeakerIndex] 
     : undefined;
-
-  const handlePinSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (pinInput.trim() === session.adminPin || pinInput.trim() === '1234') {
-      setIsAuthenticated(true);
-      setPinError(false);
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem(`mdf_auth_${session.id}`, 'true');
-      }
-    } else {
-      setPinError(true);
-    }
-  };
-
-  // Pantalla de Bloqueo PIN
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-[80vh] flex items-center justify-center p-4">
-        <div className="w-full max-w-sm bg-[#0F1A38] border border-mdf-cyan/30 rounded-3xl p-8 shadow-2xl text-center">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-mdf-blue/20 border border-mdf-cyan/40 text-mdf-cyan flex items-center justify-center mb-4">
-            <Lock className="w-7 h-7" />
-          </div>
-          <h2 className="text-xl font-bold text-white tracking-tight">Acceso de Moderador</h2>
-          <p className="text-xs text-slate-400 mt-1 mb-6">
-            Ingresa el PIN de administración de la comisión (PIN por defecto: <strong className="text-white">1234</strong>)
-          </p>
-
-          <form onSubmit={handlePinSubmit} className="space-y-4">
-            <input
-              type="password"
-              inputMode="numeric"
-              maxLength={8}
-              autoFocus
-              value={pinInput}
-              onChange={(e) => {
-                setPinInput(e.target.value);
-                setPinError(false);
-              }}
-              placeholder="PIN (1234)"
-              className="w-full text-center tracking-[0.5em] text-2xl font-mono bg-mdf-darkBg border border-mdf-darkBorder focus:border-mdf-cyan rounded-xl px-4 py-3 text-white placeholder:tracking-normal placeholder:text-sm"
-            />
-
-            {pinError && (
-              <p className="text-xs text-red-400 font-semibold">PIN incorrecto. Intenta con 1234.</p>
-            )}
-
-            <button
-              type="submit"
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-mdf-blue hover:bg-mdf-blueHover text-white font-bold text-sm shadow-lg shadow-mdf-blue/40 transition-all active:scale-95"
-            >
-              <Unlock className="w-4 h-4" />
-              <span>Ingresar al Panel</span>
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
