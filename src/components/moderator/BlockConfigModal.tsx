@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, X, Save, Clock, Lock } from 'lucide-react';
+import { Settings, X, Save, Clock } from 'lucide-react';
 import { DebateSession } from '../../types/debate';
 import { formatDurationHuman } from '../../utils/timeUtils';
 
@@ -13,7 +13,6 @@ interface BlockConfigModalProps {
     totalBlockMinutes: number;
     minSpeakerSeconds: number;
     maxSpeakerSeconds: number;
-    adminPin: string;
   }) => void;
 }
 
@@ -27,8 +26,7 @@ export const BlockConfigModal: React.FC<BlockConfigModalProps> = ({
   const [description, setDescription] = useState(session.description || '');
   const [totalBlockMinutes, setTotalBlockMinutes] = useState(session.totalBlockMinutes || 45);
   const [minSpeakerSeconds, setMinSpeakerSeconds] = useState(session.minSpeakerSeconds || 60);
-  const [maxSpeakerSeconds, setMaxSpeakerSeconds] = useState(session.maxSpeakerSeconds || 300);
-  const [adminPin, setAdminPin] = useState(session.adminPin || '1234');
+  const [maxSpeakerSeconds, setMaxSpeakerSeconds] = useState(session.maxSpeakerSeconds || 180);
 
   if (!isOpen) return null;
 
@@ -39,14 +37,13 @@ export const BlockConfigModal: React.FC<BlockConfigModalProps> = ({
       description: description.trim(),
       totalBlockMinutes: Number(totalBlockMinutes) || 45,
       minSpeakerSeconds: Number(minSpeakerSeconds) || 60,
-      maxSpeakerSeconds: Number(maxSpeakerSeconds) || 300,
-      adminPin: adminPin.trim() || '1234'
+      maxSpeakerSeconds: Number(maxSpeakerSeconds) || 180
     });
     onClose();
   };
 
   // Previsualización de cálculo
-  const previewCounts = [5, 10, 15, 25, 40];
+  const previewCounts = [5, 10, 15, 20, 30];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
@@ -149,8 +146,8 @@ export const BlockConfigModal: React.FC<BlockConfigModalProps> = ({
                 <input
                   type="number"
                   min="60"
-                  max="600"
-                  step="30"
+                  max="300"
+                  step="15"
                   required
                   value={maxSpeakerSeconds}
                   onChange={(e) => setMaxSpeakerSeconds(Number(e.target.value))}
@@ -183,22 +180,6 @@ export const BlockConfigModal: React.FC<BlockConfigModalProps> = ({
                 );
               })}
             </div>
-          </div>
-
-          {/* PIN de Moderación */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5 flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5 text-mdf-cyan" />
-              <span>PIN de Moderación (Admin)</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={adminPin}
-              onChange={(e) => setAdminPin(e.target.value)}
-              placeholder="1234"
-              className="w-full max-w-xs bg-mdf-darkBg border border-mdf-darkBorder focus:border-mdf-cyan rounded-xl px-4 py-2 text-sm text-white font-mono"
-            />
           </div>
 
           {/* Botones de acción */}

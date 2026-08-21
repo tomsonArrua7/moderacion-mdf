@@ -29,7 +29,7 @@ export function App() {
     return false;
   });
 
-  // Modal para ingresar PIN de Moderación
+  // Modal para ingresar Contraseña de Moderación
   const [isAdminAuthModalOpen, setIsAdminAuthModalOpen] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
@@ -118,11 +118,11 @@ export function App() {
     window.history.replaceState({}, '', newUrl.toString());
   };
 
-  // Validar PIN ingresado
+  // Validar Contraseña ingresada (fija e inmutable: moderador2026)
   const handlePinSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanPin = pinInput.trim();
-    if (cleanPin === session.adminPin || cleanPin === '1234') {
+    if (cleanPin === 'moderador2026') {
       setIsAdminAuthenticated(true);
       setPinError(false);
       setIsAdminAuthModalOpen(false);
@@ -154,7 +154,7 @@ export function App() {
           onRequestAdminAccess={() => setIsAdminAuthModalOpen(true)}
         />
 
-        {/* Modal para ingresar PIN de Moderador desde la Landing */}
+        {/* Modal para ingresar Contraseña de Moderador desde la Landing */}
         {isAdminAuthModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
             <div className="relative w-full max-w-sm bg-[#0F1A38] border border-mdf-cyan/30 rounded-3xl p-6 md:p-8 shadow-2xl text-center">
@@ -176,22 +176,20 @@ export function App() {
 
               <h3 className="text-xl font-bold text-white tracking-tight">Acceso de Moderador</h3>
               <p className="text-xs text-slate-400 mt-1 mb-6">
-                Ingresa la contraseña/PIN de moderación para desbloquear el panel.
+                Ingresa la contraseña de moderación para desbloquear el panel.
               </p>
 
               <form onSubmit={handlePinSubmit} className="space-y-4">
                 <input
                   type="password"
-                  inputMode="numeric"
-                  maxLength={8}
                   autoFocus
                   value={pinInput}
                   onChange={(e) => {
                     setPinInput(e.target.value);
                     setPinError(false);
                   }}
-                  placeholder="PIN (1234)"
-                  className="w-full text-center tracking-[0.4em] text-2xl font-mono bg-mdf-darkBg border border-mdf-darkBorder focus:border-mdf-cyan rounded-xl px-4 py-3 text-white placeholder:tracking-normal placeholder:text-xs"
+                  placeholder="Contraseña de moderador"
+                  className="w-full text-center text-lg font-mono bg-mdf-darkBg border border-mdf-darkBorder focus:border-mdf-cyan rounded-xl px-4 py-3 text-white placeholder:text-xs placeholder:text-slate-500"
                 />
 
                 {pinError && (
@@ -277,7 +275,7 @@ export function App() {
         )}
       </main>
 
-      {/* Modal para ingresar PIN de Moderador */}
+      {/* Modal para ingresar Contraseña de Moderador */}
       {isAdminAuthModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
           <div className="relative w-full max-w-sm bg-[#0F1A38] border border-mdf-cyan/30 rounded-3xl p-6 md:p-8 shadow-2xl text-center">
@@ -299,27 +297,25 @@ export function App() {
 
             <h3 className="text-xl font-bold text-white tracking-tight">Acceso de Moderador</h3>
             <p className="text-xs text-slate-400 mt-1 mb-6">
-              Ingresa la contraseña/PIN de moderación para desbloquear el panel de control.
+              Ingresa la contraseña de moderación para desbloquear el panel de control.
             </p>
 
             <form onSubmit={handlePinSubmit} className="space-y-4">
               <input
                 type="password"
-                inputMode="numeric"
-                maxLength={8}
                 autoFocus
                 value={pinInput}
                 onChange={(e) => {
                   setPinInput(e.target.value);
                   setPinError(false);
                 }}
-                placeholder="PIN (por defecto: 1234)"
-                className="w-full text-center tracking-[0.4em] text-2xl font-mono bg-mdf-darkBg border border-mdf-darkBorder focus:border-mdf-cyan rounded-xl px-4 py-3 text-white placeholder:tracking-normal placeholder:text-xs"
+                placeholder="Contraseña de moderador"
+                className="w-full text-center text-lg font-mono bg-mdf-darkBg border border-mdf-darkBorder focus:border-mdf-cyan rounded-xl px-4 py-3 text-white placeholder:text-xs placeholder:text-slate-500"
               />
 
               {pinError && (
                 <p className="text-xs text-red-400 font-semibold animate-shake">
-                  Contraseña incorrecta. Verifica con el moderador a cargo.
+                  Contraseña incorrecta.
                 </p>
               )}
 

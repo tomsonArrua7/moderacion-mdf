@@ -29,7 +29,7 @@ export const createInitialSession = (sessionId = 'COMISION-1'): DebateSession =>
     id: sessionId,
     title,
     description,
-    adminPin: '1234',
+    adminPin: 'moderador2026',
     status: 'CONFIG',
     totalBlockMinutes: 45,
     minSpeakerSeconds: 60,

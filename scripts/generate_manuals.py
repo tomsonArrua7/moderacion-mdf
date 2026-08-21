@@ -211,7 +211,7 @@ def generate_moderator_manual(output_path):
     app_steps = [
         [
             Paragraph("<b>1. Acceso:</b>", styles['MDFStepNumber']),
-            Paragraph("Ingresa a <b>https://moderacion-mdf.vercel.app</b> ➔ Selecciona tu salón (ej: <b>Comisión 1 a 20</b>) ➔ Toca <i>'🔒 Acceso Moderador'</i> ➔ Ingresa el PIN: <b>1234</b>.", styles['MDFBody'])
+            Paragraph("Ingresa a <b>https://moderacion-mdf.vercel.app</b> ➔ Selecciona tu salón (ej: <b>Comisión 1 a 20</b>) ➔ Toca <i>'🔒 Acceso Moderador'</i> ➔ Ingresa la contraseña: <b>moderador2026</b>.", styles['MDFBody'])
         ],
         [
             Paragraph("<b>2. Inscripción:</b>", styles['MDFStepNumber']),
