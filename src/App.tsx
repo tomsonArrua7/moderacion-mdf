@@ -4,6 +4,7 @@ import { Navbar } from './components/layout/Navbar';
 import { QRModal } from './components/layout/QRModal';
 import { CommissionSelectModal } from './components/layout/CommissionSelectModal';
 import { CommissionLandingScreen } from './components/layout/CommissionLandingScreen';
+import { DebateGuideModal } from './components/debate/DebateGuideModal';
 import { ModeratorDashboard } from './components/moderator/ModeratorDashboard';
 import { ParticipantView } from './components/participant/ParticipantView';
 import { ProjectorView } from './components/projector/ProjectorView';
@@ -18,6 +19,7 @@ export function App() {
   const [hasSelectedCommission, setHasSelectedCommission] = useState<boolean>(Boolean(sessionParam));
   const [currentSessionId, setCurrentSessionId] = useState<string>(sessionParam || 'COMISION-1');
   const [isCommissionSelectOpen, setIsCommissionSelectOpen] = useState(false);
+  const [isDebateGuideOpen, setIsDebateGuideOpen] = useState(false);
 
   // Estado de autenticación de Moderador
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
@@ -215,7 +217,7 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#080E21] text-slate-100 flex flex-col font-sans">
+    <div key={currentSessionId} className="min-h-screen bg-[#080E21] text-slate-100 flex flex-col font-sans">
       
       {/* Top Navbar */}
       <Navbar
@@ -225,6 +227,7 @@ export function App() {
         isConnected={isConnected || isFirebaseConnected}
         onOpenQR={() => setIsQROpen(true)}
         onOpenCommissionSelect={() => setIsCommissionSelectOpen(true)}
+        onOpenDebateGuide={() => setIsDebateGuideOpen(true)}
         isAdminAuthenticated={isAdminAuthenticated}
         onRequestAdminAuth={() => setIsAdminAuthModalOpen(true)}
         onAdminLogout={handleAdminLogout}
@@ -251,6 +254,7 @@ export function App() {
             onAddExceptionSpeaker={addExceptionSpeaker}
             onResetSession={resetSession}
             onOpenQR={() => setIsQROpen(true)}
+            onOpenDebateGuide={() => setIsDebateGuideOpen(true)}
           />
         ) : currentView === 'projector' ? (
           <ProjectorView
@@ -266,6 +270,7 @@ export function App() {
             onRegister={registerSpeaker}
             onSelectSpeaker={selectMySpeaker}
             onOpenCommissionSelect={() => setIsCommissionSelectOpen(true)}
+            onOpenDebateGuide={() => setIsDebateGuideOpen(true)}
             onRequestAdminAccess={() => setIsAdminAuthModalOpen(true)}
             isAdminAuthenticated={isAdminAuthenticated}
           />
@@ -337,6 +342,12 @@ export function App() {
         onClose={() => setIsCommissionSelectOpen(false)}
         currentCommissionId={session.id}
         onSelectCommission={handleSelectCommission}
+      />
+
+      {/* Guía y Preguntas de Debate */}
+      <DebateGuideModal
+        isOpen={isDebateGuideOpen}
+        onClose={() => setIsDebateGuideOpen(false)}
       />
 
       {/* QR Code Modal */}

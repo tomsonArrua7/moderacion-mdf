@@ -55,9 +55,9 @@ export const CommissionLandingScreen: React.FC<CommissionLandingScreenProps> = (
         </p>
       </div>
 
-      {/* Grid de las 15 Comisiones */}
-      <div className="max-w-lg mx-auto w-full my-6 z-10">
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5 sm:gap-3">
+      {/* Grid de las 20 Comisiones */}
+      <div className="max-w-xl mx-auto w-full my-4 z-10">
+        <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-2.5">
           {DEFAULT_COMMISSIONS.map((comm, idx) => {
             const num = idx + 1;
             return (

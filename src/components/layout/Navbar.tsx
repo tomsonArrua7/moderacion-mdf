@@ -13,7 +13,8 @@ import {
   Lock, 
   LogOut,
   MapPin,
-  ChevronDown
+  ChevronDown,
+  BookOpen
 } from 'lucide-react';
 import { DebateSession } from '../../types/debate';
 import { setSoundEnabled } from '../../utils/sound';
@@ -25,6 +26,7 @@ interface NavbarProps {
   isConnected: boolean;
   onOpenQR: () => void;
   onOpenCommissionSelect?: () => void;
+  onOpenDebateGuide?: () => void;
   isAdminAuthenticated: boolean;
   onRequestAdminAuth: () => void;
   onAdminLogout: () => void;
@@ -37,6 +39,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   isConnected,
   onOpenQR,
   onOpenCommissionSelect,
+  onOpenDebateGuide,
   isAdminAuthenticated,
   onRequestAdminAuth,
   onAdminLogout
@@ -189,6 +192,15 @@ export const Navbar: React.FC<NavbarProps> = ({
               <LogOut className="w-4 h-4" />
             </button>
           )}
+
+          {/* Botón de Guía / Preguntas de Debate */}
+          <button
+            onClick={onOpenDebateGuide}
+            className="p-2 rounded-xl bg-mdf-darkSurface hover:bg-mdf-blue/20 text-slate-300 hover:text-mdf-cyan border border-mdf-darkBorder hover:border-mdf-cyan/40 transition-colors"
+            title="Ver Preguntas y Documento de Debate"
+          >
+            <BookOpen className="w-4 h-4" />
+          </button>
 
           {/* QR Button */}
           <button

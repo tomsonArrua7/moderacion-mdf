@@ -1,6 +1,6 @@
 import os
 import sys
-from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import (
@@ -45,7 +45,7 @@ class NumberedCanvas(canvas.Canvas):
         self.setLineWidth(0.5)
         self.line(40, 35, 555, 35)
         # Textos de pie
-        self.drawString(40, 24, "MDF Juventudes • Aplicación de Moderación de Comisiones")
+        self.drawString(40, 24, "MDF Juventudes • Orientaciones para el Trabajo en Comisiones (20 Salas)")
         self.drawRightString(555, 24, f"Página {self._pageNumber} de {page_count}")
         self.restoreState()
 
@@ -57,31 +57,31 @@ def create_styles():
     styles.add(ParagraphStyle(
         name='MDFTitle',
         fontName='Helvetica-Bold',
-        fontSize=22,
-        leading=26,
+        fontSize=20,
+        leading=24,
         textColor=COLOR_PRIMARY,
-        spaceAfter=4
+        spaceAfter=3
     ))
 
     # Subtítulo institucional
     styles.add(ParagraphStyle(
         name='MDFSubtitle',
         fontName='Helvetica-Bold',
-        fontSize=12,
-        leading=16,
+        fontSize=11,
+        leading=15,
         textColor=COLOR_DARK,
-        spaceAfter=12
+        spaceAfter=10
     ))
 
     # Título de Sección H1
     styles.add(ParagraphStyle(
         name='MDFHeading1',
         fontName='Helvetica-Bold',
-        fontSize=14,
-        leading=18,
+        fontSize=13,
+        leading=17,
         textColor=COLOR_PRIMARY,
-        spaceBefore=14,
-        spaceAfter=6,
+        spaceBefore=12,
+        spaceAfter=5,
         keepWithNext=True
     ))
 
@@ -89,11 +89,11 @@ def create_styles():
     styles.add(ParagraphStyle(
         name='MDFHeading2',
         fontName='Helvetica-Bold',
-        fontSize=11,
-        leading=15,
+        fontSize=10.5,
+        leading=14,
         textColor=COLOR_DARK,
-        spaceBefore=10,
-        spaceAfter=4,
+        spaceBefore=8,
+        spaceAfter=3,
         keepWithNext=True
     ))
 
@@ -101,30 +101,30 @@ def create_styles():
     styles.add(ParagraphStyle(
         name='MDFBody',
         fontName='Helvetica',
-        fontSize=9.5,
-        leading=13.5,
+        fontSize=9,
+        leading=13,
         textColor=COLOR_TEXT,
-        spaceAfter=6
+        spaceAfter=5
     ))
 
     # Lista con viñetas
     styles.add(ParagraphStyle(
         name='MDFBullet',
         fontName='Helvetica',
-        fontSize=9,
-        leading=13,
+        fontSize=8.5,
+        leading=12.5,
         textColor=COLOR_TEXT,
-        leftIndent=15,
-        firstLineIndent=-10,
-        spaceAfter=4
+        leftIndent=12,
+        firstLineIndent=-8,
+        spaceAfter=3
     ))
 
     # Cuadro destacado / Callout
     styles.add(ParagraphStyle(
         name='MDFCallout',
         fontName='Helvetica',
-        fontSize=9,
-        leading=13,
+        fontSize=8.5,
+        leading=12.5,
         textColor=COLOR_DARK,
     ))
 
@@ -132,8 +132,8 @@ def create_styles():
     styles.add(ParagraphStyle(
         name='MDFStepNumber',
         fontName='Helvetica-Bold',
-        fontSize=11,
-        leading=14,
+        fontSize=10,
+        leading=13,
         textColor=COLOR_PRIMARY,
     ))
 
@@ -141,7 +141,7 @@ def create_styles():
 
 
 def generate_moderator_manual(output_path):
-    """Genera el Manual del Moderador / Administrador"""
+    """Genera el Manual Oficial del Moderador y Relator (Adaptado a las Orientaciones MDF)"""
     doc = SimpleDocTemplate(
         output_path,
         pagesize=A4,
@@ -154,141 +154,125 @@ def generate_moderator_manual(output_path):
     story = []
 
     # Encabezado con Badge
-    story.append(Paragraph("MDF JUVENTUDES • GUÍA OFICIAL", ParagraphStyle('Badge', fontName='Helvetica-Bold', fontSize=8, textColor=COLOR_PRIMARY, spaceAfter=2)))
-    story.append(Paragraph("Manual del Moderador de Comisión", styles['MDFTitle']))
-    story.append(Paragraph("Instrucciones paso a paso para la gestión en vivo del debate, oradores y cronómetro", styles['MDFSubtitle']))
-    story.append(HRFlowable(width="100%", thickness=1.5, color=COLOR_PRIMARY, spaceBefore=2, spaceAfter=12))
+    story.append(Paragraph("MDF JUVENTUDES • DOCUMENTO OFICIAL DE TRABAJO", ParagraphStyle('Badge', fontName='Helvetica-Bold', fontSize=8, textColor=COLOR_PRIMARY, spaceAfter=2)))
+    story.append(Paragraph("Manual del Moderador y Relator de Comisión", styles['MDFTitle']))
+    story.append(Paragraph("Estructura de trabajo, preguntas disparadoras y uso de la app para las 20 comisiones", styles['MDFSubtitle']))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=COLOR_PRIMARY, spaceBefore=2, spaceAfter=10))
 
-    # 1. Introducción y Acceso
-    story.append(Paragraph("1. Acceso a tu Comisión y Desbloqueo Admin", styles['MDFHeading1']))
+    # 1. Conformación del Equipo y Dinámica de Salón
+    story.append(Paragraph("1. Conformación del Equipo en cada Comisión", styles['MDFHeading1']))
     story.append(Paragraph(
-        "La aplicación permite gestionar hasta 15 comisiones en paralelo de manera 100% independiente. "
-        "Cada salón tiene su propia lista de oradores y su propio cronómetro sincronizado.",
+        "Cada una de las <b>20 comisiones</b> funciona con equipos conformados por:<br/>"
+        "• <b>2 Moderadores:</b> encargados de llevar el debate, otorgar la palabra, controlar los tiempos y garantizar el intercambio propositivo.<br/>"
+        "• <b>1 Relator:</b> encargado de tomar apuntes escritos de los aportes para redactar la síntesis de la comisión que se leerá al final.",
         styles['MDFBody']
     ))
 
-    access_steps = [
+    # Cuadro de Estructura de Trabajo
+    team_data = [
         [
-            Paragraph("<b>Paso 1</b>", styles['MDFStepNumber']),
-            Paragraph("Ingresa a la aplicación desde tu computadora o tablet: <b>https://moderacion-mdf.vercel.app</b>", styles['MDFBody'])
+            Paragraph("<b>Paso 1: Presentación</b>", styles['MDFHeading2']),
+            Paragraph("Los moderadores explican que las 20 comisiones leemos el mismo documento ('Juventudes MDF'), debatimos y sintetizamos. Al terminar, vamos todos juntos al Domo al acto central.", styles['MDFBody'])
         ],
         [
-            Paragraph("<b>Paso 2</b>", styles['MDFStepNumber']),
-            Paragraph("En la pantalla inicial, <b>selecciona el número de tu comisión</b> (ej: <i>Comisión 1</i>, <i>Comisión 2</i>, etc.).", styles['MDFBody'])
+            Paragraph("<b>Paso 2: Lectura & Preguntas</b>", styles['MDFHeading2']),
+            Paragraph("Se lee el documento y se abren las preguntas para la <b>Discusión General</b> y los <b>5 Ejes Temáticos</b> (disponibles en la app tocando <i>'📖 Preguntas Debate'</i>).", styles['MDFBody'])
         ],
         [
-            Paragraph("<b>Paso 3</b>", styles['MDFStepNumber']),
-            Paragraph("Haz clic en el enlace <b>'🔒 Acceso Moderador'</b> (en el pie de página o botón <i>Admin</i> en la barra superior).", styles['MDFBody'])
+            Paragraph("<b>Paso 3: Regla de los 2 Minutos</b>", styles['MDFHeading2']),
+            Paragraph("Los moderadores abren la ronda de intercambio. Para que la mayoría pueda hablar y no sea una sucesión de discursos sueltos, <b>todas las intervenciones se limitan a no más de 2 minutos (120 seg)</b>.", styles['MDFBody'])
         ],
         [
-            Paragraph("<b>Paso 4</b>", styles['MDFStepNumber']),
-            Paragraph("Ingresa el <b>PIN de Moderación</b> por defecto: <font color='#0052FF'><b>1234</b></font> y presiona <i>Desbloquear Panel</i>.", styles['MDFBody'])
+            Paragraph("<b>Paso 4: Enfoque Propositivo</b>", styles['MDFHeading2']),
+            Paragraph("Los moderadores deben controlar el tiempo de cada eje para llegar a las preguntas de carácter propositivo (ideas e iniciativas concretas a trabajar).", styles['MDFBody'])
+        ],
+        [
+            Paragraph("<b>Paso 5: Síntesis (15 min finales)</b>", styles['MDFHeading2']),
+            Paragraph("Cuando falten aprox. 15 minutos para terminar, el relator lee en voz alta la síntesis escrita para verificar con la comisión que no haya quedado nada sin apuntar.", styles['MDFBody'])
         ]
     ]
-    t_access = Table(access_steps, colWidths=[55, 460])
-    t_access.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), COLOR_LIGHT),
+    t_team = Table(team_data, colWidths=[140, 375])
+    t_team.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#F8FAFC')),
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('LEFTPADDING', (0, 0), (-1, -1), 8),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-        ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E1')),
-        ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#E2E8F0')),
-    ]))
-    story.append(t_access)
-    story.append(Spacer(1, 10))
-
-    # 2. Flujo de Trabajo en 4 Pasos
-    story.append(Paragraph("2. Flujo de Trabajo Durante el Debate", styles['MDFHeading1']))
-
-    steps_data = [
-        [
-            Paragraph("<b>Fase 1: Inscripción</b>", styles['MDFHeading2']),
-            Paragraph(
-                "• Haz clic en el botón <b>'QR Móvil'</b> o proyéctalo para que los participantes lo escaneen.<br/>"
-                "• Presiona el botón verde <b>'Abrir Lista'</b> para habilitar las inscripciones desde los teléfonos.<br/>"
-                "• Verás en vivo cómo los participantes se anotan con Nombre, Apellido y Organización.",
-                styles['MDFBody']
-            )
-        ],
-        [
-            Paragraph("<b>Fase 2: Sorteo</b>", styles['MDFHeading2']),
-            Paragraph(
-                "• Una vez finalizado el tiempo de inscripción, presiona <b>'Cerrar Lista'</b>.<br/>"
-                "• Haz clic en el botón <b>'🎲 Sortear Oradores'</b>. El algoritmo Fisher-Yates barajará aleatoriamente el orden de forma transparente, calculando automáticamente el tiempo exacto que le corresponde a cada orador según los minutos totales del bloque.",
-                styles['MDFBody']
-            )
-        ],
-        [
-            Paragraph("<b>Fase 3: Debate en Vivo</b>", styles['MDFHeading2']),
-            Paragraph(
-                "• Llama al primer orador y presiona <b>'Iniciar'</b> en el cronómetro circular.<br/>"
-                "• El cronómetro correrá sincronizado al milisegundo en la pantalla gigante y en los celulares de todos los asistentes.<br/>"
-                "• A los <b>30 segundos restantes</b> la app emitirá un tono de aviso y cambiará a color ámbar.<br/>"
-                "• Al cumplirse el tiempo (<b>00:00</b>), sonará la campana de cierre y pasará a color rojo.",
-                styles['MDFBody']
-            )
-        ],
-        [
-            Paragraph("<b>Fase 4: Siguiente / Fin</b>", styles['MDFHeading2']),
-            Paragraph(
-                "• Al finalizar la exposición, presiona <b>'Siguiente ➔'</b> para convocar al próximo orador.<br/>"
-                "• Si la asamblea concluye, el bloque queda cerrado y registrado.",
-                styles['MDFBody']
-            )
-        ]
-    ]
-    t_steps = Table(steps_data, colWidths=[130, 385])
-    t_steps.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), colors.white),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
         ('LEFTPADDING', (0, 0), (-1, -1), 8),
         ('RIGHTPADDING', (0, 0), (-1, -1), 8),
         ('LINEBELOW', (0, 0), (-1, -1), 0.5, colors.HexColor('#E2E8F0')),
         ('BOX', (0, 0), (-1, -1), 1, COLOR_PRIMARY),
     ]))
-    story.append(t_steps)
-    story.append(Spacer(1, 10))
-
-    # 3. Herramientas Especiales para el Moderador
-    story.append(Paragraph("3. Herramientas de Control y Excepciones", styles['MDFHeading1']))
-    story.append(Paragraph("• <b>Extensión de Tiempo (+30s / -30s):</b> Si la asamblea concede una prórroga al orador, presiona <b>+30s</b> para añadir tiempo en caliente.", styles['MDFBullet']))
-    story.append(Paragraph("• <b>Inscribir por Excepción (+ Excepción):</b> Si una autoridad o invitado especial debe hablar con prioridad, usa el botón <i>+ Excepción</i> para insertarlo como <i>'Siguiente a hablar'</i> sin alterar el sorteo del resto.", styles['MDFBullet']))
-    story.append(Paragraph("• <b>Reordenar / Eliminar:</b> Puedes subir o bajar manualmente a un orador con las flechas (▲/▼) o marcarlo como ausente si se retiró del salón.", styles['MDFBullet']))
-    story.append(Paragraph("• <b>Configurar Parámetros (Tuerca ⚙️):</b> Puedes modificar el tiempo total del bloque (ej: 45 min, 60 min), los límites por orador (mín. 60s, máx. 300s) o cambiar el PIN de moderación.", styles['MDFBullet']))
+    story.append(t_team)
     story.append(Spacer(1, 8))
 
-    # Cuadro de Consejos Clave
-    tip_content = [
+    # 2. Uso de la Aplicación en Vivo
+    story.append(Paragraph("2. Uso de la Aplicación de Moderación (Paso a Paso)", styles['MDFHeading1']))
+    
+    app_steps = [
         [
-            Paragraph(
-                "<b>💡 Consejos de Oro para una Moderación Exitosa:</b><br/>"
-                "1. <b>Proyector:</b> Abre una pestaña con la <i>'Vista Proyector'</i> (presionando F11 para pantalla completa) para que todo el salón vea el orador actual, los próximos 3 en espera y el reloj gigante.<br/>"
-                "2. <b>Conexión en Tiempo Real:</b> La app se sincroniza automáticamente por Firebase en la nube. Verifica que el ícono de Wi-Fi esté en verde en la barra superior.<br/>"
-                "3. <b>Múltiples inscripciones:</b> Si un compañero no tiene celular, otro participante puede anotarlo desde su propio teléfono tocando <i>'+ Anotar a otro compañero'</i>.",
-                styles['MDFCallout']
-            )
+            Paragraph("<b>1. Acceso:</b>", styles['MDFStepNumber']),
+            Paragraph("Ingresa a <b>https://moderacion-mdf.vercel.app</b> ➔ Selecciona tu salón (ej: <b>Comisión 1 a 20</b>) ➔ Toca <i>'🔒 Acceso Moderador'</i> ➔ Ingresa el PIN: <b>1234</b>.", styles['MDFBody'])
+        ],
+        [
+            Paragraph("<b>2. Inscripción:</b>", styles['MDFStepNumber']),
+            Paragraph("Abre el <b>'QR Móvil'</b> o proyéctalo en pantalla ➔ Presiona el botón verde <b>'Abrir Lista'</b> para que los asistentes se anoten desde su celular.", styles['MDFBody'])
+        ],
+        [
+            Paragraph("<b>3. Sorteo:</b>", styles['MDFStepNumber']),
+            Paragraph("Presiona <b>'Cerrar Lista'</b> ➔ Toca <b>'🎲 Sortear Oradores'</b>. La app ordenará transparentemente la lista y fijará el reloj en 2 minutos (120s) por orador.", styles['MDFBody'])
+        ],
+        [
+            Paragraph("<b>4. Debate:</b>", styles['MDFStepNumber']),
+            Paragraph("Presiona <b>'Iniciar'</b> al convocar al primer orador. A los 30s sonará el tono de advertencia y a los 00:00 la campana de cierre. Al terminar, presiona <b>'Siguiente ➔'</b>.", styles['MDFBody'])
+        ],
+        [
+            Paragraph("<b>5. Excepciones:</b>", styles['MDFStepNumber']),
+            Paragraph("Si un invitado especial debe intervenir, usa el botón <b>'+ Excepción'</b> para insertarlo como siguiente orador sin desordenar el resto.", styles['MDFBody'])
         ]
     ]
-    t_tip = Table(tip_content, colWidths=[515])
-    t_tip.setStyle(TableStyle([
+    t_app = Table(app_steps, colWidths=[80, 435])
+    t_app.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), colors.white),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
+        ('LEFTPADDING', (0, 0), (-1, -1), 8),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E1')),
+        ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#E2E8F0')),
+    ]))
+    story.append(t_app)
+    story.append(Spacer(1, 8))
+
+    # 3. Resumen de los 5 Ejes Temáticos del Debate
+    story.append(Paragraph("3. Ejes Temáticos Oficiales para Guiar la Discusión", styles['MDFHeading1']))
+    story.append(Paragraph("Los moderadores pueden consultar las preguntas completas en la app tocando el botón <b>'📖 Preguntas Debate'</b>:", styles['MDFBody']))
+    story.append(Paragraph("• <b>Eje 1 - Salud Mental:</b> Consumo problemático, ansiedad, depresión, prevención del suicidio y redes de cuidado mutuo en universidades y barrios.", styles['MDFBullet']))
+    story.append(Paragraph("• <b>Eje 2 - Trabajo y Precarización:</b> Primer empleo, aplicaciones/plataformas, debate sobre el discurso 'soy mi propio jefe' y modelo productivo con derechos.", styles['MDFBullet']))
+    story.append(Paragraph("• <b>Eje 3 - Vivienda y Hábitat:</b> Obstáculos para independizarse, impacto de alquileres, acceso a terrenos y rol del Estado.", styles['MDFBullet']))
+    story.append(Paragraph("• <b>Eje 4 - Educación:</b> Causas de deserción y ausentismo escolar, barreras para la universidad y propuestas para la permanencia estudiantil.", styles['MDFBullet']))
+    story.append(Paragraph("• <b>Eje 5 - Redes Sociales, IA y Tecnología:</b> Desinformación, oportunidades y riesgos de la IA y estrategias para el espacio político.", styles['MDFBullet']))
+    story.append(Spacer(1, 6))
+
+    # Tip para pantalla de proyector
+    t_proj = Table([[
+        Paragraph("<b>📺 Consejo Proyector:</b> Conecta la computadora al proyector del salón y abre la <i>'Vista Proyector'</i> (F11 en pantalla completa). Mostrará el reloj gigante, el orador al habla y el QR permanente para que nadie se pierda.", styles['MDFCallout'])
+    ]], colWidths=[515])
+    t_proj.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#EFF6FF')),
         ('BOX', (0, 0), (-1, -1), 1, COLOR_SECONDARY),
         ('LEFTPADDING', (0, 0), (-1, -1), 10),
         ('RIGHTPADDING', (0, 0), (-1, -1), 10),
-        ('TOPPADDING', (0, 0), (-1, -1), 8),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
     ]))
-    story.append(t_tip)
+    story.append(t_proj)
 
     doc.build(story, canvasmaker=NumberedCanvas)
 
 
 def generate_participant_manual(output_path):
-    """Genera el Manual del Participante / Usuario"""
+    """Genera el Manual del Participante (Adaptado a las Orientaciones MDF)"""
     doc = SimpleDocTemplate(
         output_path,
         pagesize=A4,
@@ -301,119 +285,104 @@ def generate_participant_manual(output_path):
     story = []
 
     # Encabezado con Badge
-    story.append(Paragraph("MDF JUVENTUDES • GUÍA OFICIAL", ParagraphStyle('Badge', fontName='Helvetica-Bold', fontSize=8, textColor=COLOR_PRIMARY, spaceAfter=2)))
-    story.append(Paragraph("Manual del Participante", styles['MDFTitle']))
-    story.append(Paragraph("Cómo ingresar a tu comisión, anotarte en la lista de oradores y seguir el debate en vivo desde tu celular", styles['MDFSubtitle']))
-    story.append(HRFlowable(width="100%", thickness=1.5, color=COLOR_PRIMARY, spaceBefore=2, spaceAfter=14))
+    story.append(Paragraph("MDF JUVENTUDES • DOCUMENTO DE TRABAJO", ParagraphStyle('Badge', fontName='Helvetica-Bold', fontSize=8, textColor=COLOR_PRIMARY, spaceAfter=2)))
+    story.append(Paragraph("Manual del Participante de Comisión", styles['MDFTitle']))
+    story.append(Paragraph("Cómo participar, anotarte para hablar y seguir el debate en vivo desde tu celular", styles['MDFSubtitle']))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=COLOR_PRIMARY, spaceBefore=2, spaceAfter=10))
 
-    # 1. Cómo Ingresar
-    story.append(Paragraph("1. Cómo Ingresar a tu Comisión", styles['MDFHeading1']))
+    # 1. Cómo Ingresar a tu Comisión
+    story.append(Paragraph("1. Cómo Ingresar a tu Salón (20 Comisiones)", styles['MDFHeading1']))
     story.append(Paragraph(
-        "No necesitas descargar ninguna aplicación ni crear contraseñas. Puedes acceder directamente desde el navegador de tu celular (Chrome, Safari, etc.).",
+        "No necesitas descargar nada ni crear usuarios. Puedes ingresar desde cualquier celular conectado a internet (Chrome, Safari, etc.):",
         styles['MDFBody']
     ))
 
     in_steps = [
         [
-            Paragraph("<b>Opción A<br/>(Recomendada)</b>", styles['MDFStepNumber']),
-            Paragraph(
-                "<b>Escanea el Código QR</b> proyectado en la pantalla de tu salón.<br/>"
-                "Tu teléfono se conectará automáticamente a tu comisión sin tener que configurar nada.",
-                styles['MDFBody']
-            )
+            Paragraph("<b>Opción A<br/>(Por QR)</b>", styles['MDFStepNumber']),
+            Paragraph("<b>Escanea el Código QR</b> proyectado en la pantalla de tu comisión. Entrarás directamente a tu salón sin tener que elegir nada.", styles['MDFBody'])
         ],
         [
-            Paragraph("<b>Opción B<br/>(Manual)</b>", styles['MDFStepNumber']),
-            Paragraph(
-                "Ingresa desde tu navegador a: <b>https://moderacion-mdf.vercel.app</b><br/>"
-                "En la pantalla verás <i>'¿En qué comisión estás?'</i>. Toca el número de tu salón (ej: <b>[ 1 ]</b> a <b>[ 15 ]</b>) para ingresar.",
-                styles['MDFBody']
-            )
+            Paragraph("<b>Opción B<br/>(Por Link)</b>", styles['MDFStepNumber']),
+            Paragraph("Ingresa en: <b>https://moderacion-mdf.vercel.app</b> ➔ Toca el botón con el número de tu comisión (<b>[ 1 ]</b> a <b>[ 20 ]</b>).", styles['MDFBody'])
         ]
     ]
-    t_in = Table(in_steps, colWidths=[90, 425])
+    t_in = Table(in_steps, colWidths=[80, 435])
     t_in.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), COLOR_LIGHT),
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
         ('LEFTPADDING', (0, 0), (-1, -1), 8),
         ('RIGHTPADDING', (0, 0), (-1, -1), 8),
         ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E1')),
         ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#E2E8F0')),
     ]))
     story.append(t_in)
-    story.append(Spacer(1, 12))
+    story.append(Spacer(1, 8))
 
-    # 2. Cómo Anotarte para Hablar
-    story.append(Paragraph("2. Cómo Anotarte en la Lista de Oradores", styles['MDFHeading1']))
+    # 2. Cómo Anotarte y Reglas de Participación
+    story.append(Paragraph("2. Inscripción en la Lista de Oradores & Regla de los 2 Minutos", styles['MDFHeading1']))
     
-    reg_steps = [
+    part_steps = [
         [
-            Paragraph("<b>Paso 1</b>", styles['MDFStepNumber']),
-            Paragraph("Verifica en tu pantalla que el estado indique <font color='#10B981'><b>● Inscripción Abierta</b></font>.", styles['MDFBody'])
+            Paragraph("<b>Paso 1: Inscripción</b>", styles['MDFHeading2']),
+            Paragraph("Cuando los moderadores abran la lista, completa tu <b>Nombre</b>, <b>Apellido</b> y tu <b>Organización</b> (opcional) ➔ Presiona <b>'¡Anotarme en la Lista!'</b>.", styles['MDFBody'])
         ],
         [
-            Paragraph("<b>Paso 2</b>", styles['MDFStepNumber']),
-            Paragraph("Completa tus datos en el formulario:<br/>"
-                      "• <b>Nombre</b> (obligatorio)<br/>"
-                      "• <b>Apellido</b> (obligatorio)<br/>"
-                      "• <b>Organización / Agrupación</b> (opcional, ej: <i>Juventudes Centro</i>, <i>Bloque Universitario</i>)", styles['MDFBody'])
+            Paragraph("<b>Paso 2: Sorteo de Orden</b>", styles['MDFHeading2']),
+            Paragraph("Al cerrar las inscripciones, la app sortea aleatoriamente el orden para que sea transparente y equitativo. Verás tu puesto definitivo en pantalla.", styles['MDFBody'])
         ],
         [
-            Paragraph("<b>Paso 3</b>", styles['MDFStepNumber']),
-            Paragraph("Presiona el botón azul: <b>'¡Anotarme en la Lista!'</b>.", styles['MDFBody'])
+            Paragraph("<b>Paso 3: Tiempo Máximo (2 min)</b>", styles['MDFHeading2']),
+            Paragraph("La regla oficial de MDF Juventudes establece <b>intervenciones de hasta 2 minutos</b> para que todos los compañeros puedan expresarse y aportar propuestas concretas.", styles['MDFBody'])
         ],
         [
-            Paragraph("<b>Paso 4</b>", styles['MDFStepNumber']),
-            Paragraph("Aparecerá tu tarjeta de <font color='#0052FF'><b>Inscripción Confirmada</b></font> con tu número de orden en espera.", styles['MDFBody'])
+            Paragraph("<b>Paso 4: ¡Tu Turno de Hablar!</b>", styles['MDFHeading2']),
+            Paragraph("Tu celular te indicará en vivo cuántos oradores faltan antes de tu turno y vibrará con una alerta en pantalla cuando te toque hablar en el micrófono.", styles['MDFBody'])
         ]
     ]
-    t_reg = Table(reg_steps, colWidths=[55, 460])
-    t_reg.setStyle(TableStyle([
+    t_part = Table(part_steps, colWidths=[130, 385])
+    t_part.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.white),
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
         ('LEFTPADDING', (0, 0), (-1, -1), 8),
         ('RIGHTPADDING', (0, 0), (-1, -1), 8),
         ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E1')),
         ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#E2E8F0')),
     ]))
-    story.append(t_reg)
-    story.append(Spacer(1, 12))
+    story.append(t_part)
+    story.append(Spacer(1, 8))
 
-    # 3. ¿Qué pasa durante el debate?
-    story.append(Paragraph("3. Durante el Debate: Sigue tu Turno en Vivo", styles['MDFHeading1']))
-    story.append(Paragraph("• <b>Sorteo de Orden:</b> Cuando el moderador cierra la lista y realiza el sorteo, tu celular se actualizará automáticamente mostrando tu posición definitiva.", styles['MDFBullet']))
-    story.append(Paragraph("• <b>Contador de Espera:</b> Verás en tiempo real cuántos oradores faltan antes de tu turno (ej: <i>'Faltan 3 oradores'</i> o <i>'Próximo a hablar'</i>).", styles['MDFBullet']))
-    story.append(Paragraph("• <b>Alerta '¡Es tu Turno de Hablar!':</b> Cuando el moderador inicie tu turno, tu celular vibrará y mostrará una alerta en pantalla para que te acerques al micrófono.", styles['MDFBullet']))
-    story.append(Paragraph("• <b>Cronómetro Sincronizado:</b> Podrás ver los minutos y segundos exactos que te quedan para redondear tu idea.", styles['MDFBullet']))
-    story.append(Spacer(1, 10))
+    # 3. Preguntas de Debate en el Celular
+    story.append(Paragraph("3. Consulta las Preguntas de Debate desde tu Celular", styles['MDFHeading1']))
+    story.append(Paragraph(
+        "En la parte superior de tu pantalla verás el botón <b>'📖 Ver Preguntas y Ejes de Debate'</b>. "
+        "Al tocarlo, podrás leer en cualquier momento el documento completo, las preguntas disparadoras sobre el MDF Juventudes y los 5 ejes temáticos (Salud Mental, Trabajo, Vivienda, Educación y Tecnología/IA).",
+        styles['MDFBody']
+    ))
+    story.append(Spacer(1, 6))
 
-    # 4. Preguntas Frecuentes
+    # 4. Ayuda y Casos Especiales
     story.append(Paragraph("4. Preguntas Frecuentes", styles['MDFHeading1']))
-    
     faq_data = [
         [
-            Paragraph("<b>¿Puedo anotar a un compañero desde mi celular?</b>", styles['MDFHeading2']),
-            Paragraph("<b>Sí.</b> Si un compañero no tiene celular o se quedó sin batería, después de anotarte verás el botón <b>'+ Anotar a otro compañero desde este móvil'</b>. Podrás inscribir a todos los que necesites y alternar entre sus turnos en las pestañas superiores.", styles['MDFBody'])
+            Paragraph("<b>¿Puedo anotar a un compañero sin celular?</b>", styles['MDFHeading2']),
+            Paragraph("<b>Sí.</b> Toca <b>'+ Anotar a otro compañero desde este móvil'</b>. Podrás inscribir a varios compañeros y seguir sus turnos desde la misma pantalla.", styles['MDFBody'])
         ],
         [
-            Paragraph("<b>¿Qué hago si me equivoqué de salón?</b>", styles['MDFHeading2']),
-            Paragraph("Toca el botón <b>'📍 Cambiar Comisión'</b> en la parte superior y selecciona el número de salón correcto.", styles['MDFBody'])
-        ],
-        [
-            Paragraph("<b>¿Se pierden mis datos si se apaga la pantalla?</b>", styles['MDFHeading2']),
-            Paragraph("<b>No.</b> Tu lugar en la lista y tus datos quedan guardados en la memoria de tu teléfono y en la base de datos de la comisión. Al volver a abrir la página continuarás en tu turno.", styles['MDFBody'])
+            Paragraph("<b>¿Qué pasa al finalizar la comisión?</b>", styles['MDFHeading2']),
+            Paragraph("El relator leerá la síntesis de los acuerdos y propuestas de la comisión. Luego, <b>nos dirigimos todos juntos al Domo para el acto central</b>.", styles['MDFBody'])
         ]
     ]
     t_faq = Table(faq_data, colWidths=[180, 335])
     t_faq.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#F8FAFC')),
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
         ('LEFTPADDING', (0, 0), (-1, -1), 8),
         ('RIGHTPADDING', (0, 0), (-1, -1), 8),
         ('LINEBELOW', (0, 0), (-1, -1), 0.5, colors.HexColor('#E2E8F0')),
@@ -432,18 +401,17 @@ if __name__ == '__main__':
     mod_pdf = os.path.join(public_dir, 'MANUAL_MODERADOR_MDF_JUVENTUDES.pdf')
     part_pdf = os.path.join(public_dir, 'MANUAL_PARTICIPANTE_MDF_JUVENTUDES.pdf')
 
-    # También guardamos copias directas en la raíz del proyecto para fácil acceso
     root_mod_pdf = os.path.join(base_dir, 'MANUAL_MODERADOR_MDF_JUVENTUDES.pdf')
     root_part_pdf = os.path.join(base_dir, 'MANUAL_PARTICIPANTE_MDF_JUVENTUDES.pdf')
 
-    print("Generando Manual del Moderador...")
+    print("Generando Manual Oficial del Moderador y Relator (20 Comisiones)...")
     generate_moderator_manual(mod_pdf)
     generate_moderator_manual(root_mod_pdf)
     print(f"[OK] Generado: {mod_pdf}")
 
-    print("Generando Manual del Participante...")
+    print("Generando Manual Oficial del Participante (20 Comisiones)...")
     generate_participant_manual(part_pdf)
     generate_participant_manual(root_part_pdf)
     print(f"[OK] Generado: {part_pdf}")
 
-    print("Manuales PDF generados con exito.")
+    print("Manuales PDF 100% actualizados con las Orientaciones Oficiales MDF.")

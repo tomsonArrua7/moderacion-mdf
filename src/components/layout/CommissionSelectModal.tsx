@@ -49,7 +49,7 @@ export const CommissionSelectModal: React.FC<CommissionSelectModalProps> = ({
             <div>
               <h3 className="text-xl font-bold text-white tracking-tight">Seleccionar Comisión</h3>
               <p className="text-xs text-slate-400">
-                Elige en cuál de las 15 comisiones de debate te encuentras participando
+                Elige en cuál de las 20 comisiones de debate te encuentras participando
               </p>
             </div>
           </div>
@@ -68,14 +68,14 @@ export const CommissionSelectModal: React.FC<CommissionSelectModalProps> = ({
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar comisión por número (ej: 1, 2, 15)..."
+            placeholder="Buscar comisión por número (ej: 1, 2, 20)..."
             className="w-full bg-mdf-darkBg border border-mdf-darkBorder focus:border-mdf-cyan rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500"
           />
         </div>
 
-        {/* Grid de las 15 Comisiones */}
+        {/* Grid de las 20 Comisiones */}
         <div className="flex-1 overflow-y-auto space-y-2 pr-1 mb-4">
-          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
+          <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-2.5">
             {filteredCommissions.map((comm) => {
               const isSelected = currentCommissionId.toUpperCase() === comm.id.toUpperCase();
 

@@ -23,7 +23,8 @@ import {
   Clock, 
   QrCode, 
   Cloud,
-  FileText
+  FileText,
+  BookOpen
 } from 'lucide-react';
 import { formatDurationHuman } from '../../utils/timeUtils';
 
@@ -52,6 +53,7 @@ interface ModeratorDashboardProps {
   onAddExceptionSpeaker: (payload: AddExceptionSpeakerPayload) => void;
   onResetSession: () => void;
   onOpenQR: () => void;
+  onOpenDebateGuide?: () => void;
 }
 
 export const ModeratorDashboard: React.FC<ModeratorDashboardProps> = ({
@@ -71,7 +73,8 @@ export const ModeratorDashboard: React.FC<ModeratorDashboardProps> = ({
   onRemoveSpeaker,
   onAddExceptionSpeaker,
   onResetSession,
-  onOpenQR
+  onOpenQR,
+  onOpenDebateGuide
 }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
@@ -229,6 +232,16 @@ export const ModeratorDashboard: React.FC<ModeratorDashboardProps> = ({
           >
             <QrCode className="w-4 h-4 text-mdf-cyan" />
             <span className="hidden sm:inline">QR Móvil</span>
+          </button>
+
+          {/* Preguntas de Debate */}
+          <button
+            onClick={onOpenDebateGuide}
+            className="flex items-center gap-1.5 py-2.5 px-3.5 rounded-xl bg-mdf-blue/20 hover:bg-mdf-blue/30 border border-mdf-cyan/40 text-mdf-cyan text-xs font-bold transition-colors"
+            title="Ver Preguntas y Documento de Debate"
+          >
+            <BookOpen className="w-4 h-4" />
+            <span className="hidden sm:inline">Preguntas Debate</span>
           </button>
 
           {/* Manual PDF */}
