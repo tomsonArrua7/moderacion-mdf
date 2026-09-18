@@ -27,36 +27,31 @@
   background: rgba(0, 210, 255, 0.6);
 }
 
-/* Glassmorphism utility classes */
+/* Flat panel utility classes */
 .glass-panel {
-  background: rgba(15, 26, 56, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 210, 255, 0.15);
+  background: rgba(18, 38, 79, 0.9);
+  border: 1px solid rgba(116, 172, 223, 0.2);
 }
 
 .glass-panel-mdf {
-  background: linear-gradient(135deg, rgba(0, 82, 255, 0.15) 0%, rgba(15, 26, 56, 0.85) 100%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 210, 255, 0.25);
+  background: rgba(18, 38, 79, 0.9);
+  border: 1px solid rgba(116, 172, 223, 0.4);
 }
 
 .glass-panel-danger {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(15, 26, 56, 0.9) 100%);
-  backdrop-filter: blur(16px);
+  background: rgba(15, 26, 56, 0.9);
   border: 1px solid rgba(239, 68, 68, 0.4);
 }
 
-/* Glowing text effects */
+/* Glow effects removed for flat minimalist aesthetic */
 .text-glow-cyan {
-  text-shadow: 0 0 15px rgba(0, 210, 255, 0.6), 0 0 30px rgba(0, 210, 255, 0.3);
+  color: #FFB81C;
 }
 
 .text-glow-amber {
-  text-shadow: 0 0 15px rgba(245, 158, 11, 0.6), 0 0 30px rgba(245, 158, 11, 0.3);
+  color: #F59E0B;
 }
 
 .text-glow-red {
-  text-shadow: 0 0 20px rgba(239, 68, 68, 0.8), 0 0 40px rgba(239, 68, 68, 0.5);
+  color: #EF4444;
 }

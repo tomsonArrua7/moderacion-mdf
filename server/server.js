@@ -34,14 +34,35 @@ function calculateSpeakerTimeSeconds(totalBlockMinutes, speakerCount, minSeconds
   return rounded;
 }
 
-// Algoritmo Fisher-Yates Knuth Shuffle
+// Algoritmo Fisher-Yates Knuth Shuffle con separación de provincias
 function fisherYatesShuffle(array) {
-  const result = [...array];
-  for (let i = result.length - 1; i > 0; i--) {
+  let shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-  return result;
+
+  // Resolve consecutive provinces
+  for (let i = 0; i < shuffled.length - 1; i++) {
+    if (shuffled[i].province && shuffled[i].province === shuffled[i + 1].province) {
+      for (let j = i + 2; j < shuffled.length; j++) {
+        const jProvince = shuffled[j].province;
+        const iPlus1Province = shuffled[i + 1].province;
+
+        const jOkWithI = jProvince !== shuffled[i].province;
+        const jOkWithIPlus2 = (i + 2 < shuffled.length && i + 2 !== j) ? jProvince !== shuffled[i + 2].province : true;
+        const iPlus1OkWithJMinus1 = iPlus1Province !== shuffled[j - 1].province;
+        const iPlus1OkWithJPlus1 = (j + 1 < shuffled.length) ? iPlus1Province !== shuffled[j + 1].province : true;
+
+        if (jOkWithI && jOkWithIPlus2 && iPlus1OkWithJMinus1 && iPlus1OkWithJPlus1) {
+          [shuffled[i + 1], shuffled[j]] = [shuffled[j], shuffled[i + 1]];
+          break;
+        }
+      }
+    }
+  }
+
+  return shuffled;
 }
 
 // Inicializar una sesión limpia si no existe
@@ -53,15 +74,15 @@ function getOrCreateSession(sessionId = 'MDF-JUV') {
       description: 'Debate de propuestas, lineamientos y ejes estratégicos 2026',
       adminPin: '1234',
       status: 'CONFIG',
-      totalBlockMinutes: 45,
-      minSpeakerSeconds: 60,
+      totalBlockMinutes: 60,
+      minSpeakerSeconds: 300,
       maxSpeakerSeconds: 300,
-      calculatedSpeakerSeconds: 180,
+      calculatedSpeakerSeconds: 300,
       speakers: [], // Lista inicial 100% limpia sin datos de prueba
       currentSpeakerIndex: -1,
       timer: {
         status: 'IDLE',
-        durationSeconds: 180,
+        durationSeconds: 300,
         startedAt: null,
         pausedAt: null,
         accumulatedSeconds: 0,
@@ -115,7 +136,7 @@ io.on('connection', (socket) => {
   });
 
   // Registro de participante móvil
-  socket.on('speaker:register', ({ sessionId = 'MDF-JUV', name, organization, speakerId }) => {
+  socket.on('speaker:register', ({ sessionId = 'MDF-JUV', name, organization, province, speakerId }) => {
     const session = getOrCreateSession(sessionId);
     const id = speakerId || 'spk_' + Math.random().toString(36).substr(2, 9);
     
@@ -123,6 +144,7 @@ io.on('connection', (socket) => {
       id,
       name: name.trim(),
       organization: organization ? organization.trim() : undefined,
+      province: province,
       registeredAt: Date.now(),
       order: session.speakers.length + 1,
       status: 'WAITING',
@@ -354,12 +376,13 @@ io.on('connection', (socket) => {
   });
 
   // Agregar excepción
-  socket.on('speaker:add_exception', ({ sessionId = 'MDF-JUV', name, organization, insertPosition }) => {
+  socket.on('speaker:add_exception', ({ sessionId = 'MDF-JUV', name, organization, province, insertPosition }) => {
     const session = getOrCreateSession(sessionId);
     const newSpeaker = {
       id: 'spk_exc_' + Math.random().toString(36).substr(2, 9),
       name: name.trim(),
       organization: organization ? organization.trim() : undefined,
+      province: province,
       registeredAt: Date.now(),
       order: session.speakers.length + 1,
       status: 'WAITING',

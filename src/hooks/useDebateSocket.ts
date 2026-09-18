@@ -31,16 +31,16 @@ export const createInitialSession = (sessionId = 'COMISION-1'): DebateSession =>
     description,
     adminPin: 'moderador2026',
     status: 'CONFIG',
-    totalBlockMinutes: 45,
-    minSpeakerSeconds: 60,
-    maxSpeakerSeconds: 180,
-    calculatedSpeakerSeconds: 120,
+    totalBlockMinutes: 60,
+    minSpeakerSeconds: 300,
+    maxSpeakerSeconds: 300,
+    calculatedSpeakerSeconds: 300,
     speakers: [],
     lateSpeakers: [],
     currentSpeakerIndex: -1,
     timer: {
       status: 'IDLE',
-      durationSeconds: 120,
+      durationSeconds: 300,
       startedAt: null,
       pausedAt: null,
       accumulatedSeconds: 0,
@@ -281,6 +281,7 @@ export const useDebateSocket = (sessionId = 'COMISION-1') => {
     firstName: string, 
     lastName: string, 
     organization?: string,
+    province?: string,
     allowDuplicate = false
   ): { success: boolean; speakerId?: string; isDuplicate?: boolean; isLate?: boolean; existingName?: string } => {
     const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
@@ -311,6 +312,7 @@ export const useDebateSocket = (sessionId = 'COMISION-1') => {
           id: newId,
           name: fullName,
           organization: organization?.trim() || undefined,
+          province: province,
           registeredAt: trueNow,
           order: currentLate.length + 1,
           status: 'WAITING',
@@ -331,6 +333,7 @@ export const useDebateSocket = (sessionId = 'COMISION-1') => {
           id: newId,
           name: fullName,
           organization: organization?.trim() || undefined,
+          province: province,
           registeredAt: trueNow,
           order: prev.speakers.length + 1,
           status: 'WAITING',
@@ -355,7 +358,7 @@ export const useDebateSocket = (sessionId = 'COMISION-1') => {
           updatedAt: trueNow
         };
       }
-    }, 'speaker:register', { name: fullName, organization, speakerId: newId, isLate: isLateRegistration });
+    }, 'speaker:register', { name: fullName, organization, province, speakerId: newId, isLate: isLateRegistration });
 
     setMyRegisteredSpeakerIds((prev) => {
       const updated = [...prev, newId];

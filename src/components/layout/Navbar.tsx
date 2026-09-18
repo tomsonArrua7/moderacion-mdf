@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { DebateSession } from '../../types/debate';
 import { setSoundEnabled } from '../../utils/sound';
+import { SunOfMayIcon } from '../icons/ArgentineIcons';
 
 interface NavbarProps {
   session: DebateSession;
@@ -90,7 +91,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div>
             <div className="flex items-center gap-1.5">
               <span className="font-black text-lg tracking-tight text-white flex items-center">
-                MDF <span className="text-mdf-cyan ml-1 font-semibold text-xs tracking-widest uppercase bg-mdf-cyan/10 px-1.5 py-0.5 rounded border border-mdf-cyan/30">Juventudes</span>
+                MDF <span className="text-mdf-cyan ml-1 font-semibold text-xs tracking-widest uppercase bg-mdf-cyan/10 px-1.5 py-0.5 rounded border border-mdf-cyan/30 flex items-center gap-1">Juventudes <SunOfMayIcon className="w-3.5 h-3.5" /></span>
               </span>
             </div>
             

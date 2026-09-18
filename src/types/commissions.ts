@@ -4,14 +4,13 @@ export interface CommissionInfo {
   description?: string;
 }
 
-export const DEFAULT_COMMISSIONS: CommissionInfo[] = Array.from({ length: 20 }, (_, i) => {
-  const num = i + 1;
-  return {
-    id: `COMISION-${num}`,
-    name: `Comisión ${num}`,
+export const DEFAULT_COMMISSIONS: CommissionInfo[] = [
+  {
+    id: 'MDF-JUV',
+    name: 'Comisión Juventudes',
     description: 'Lanzamiento MDF Juventudes • Documento de Trabajo'
-  };
-});
+  }
+];
 
 export interface DebateSection {
   title: string;

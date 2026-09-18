@@ -16,6 +16,7 @@ import {
   Shield
 } from 'lucide-react';
 import { triggerHaptic } from '../../utils/sound';
+import { PROVINCES } from '../../types/provinces';
 
 interface ParticipantViewProps {
   session: DebateSession;
@@ -26,6 +27,7 @@ interface ParticipantViewProps {
     firstName: string, 
     lastName: string, 
     organization?: string, 
+    province?: string,
     allowDuplicate?: boolean
   ) => { success: boolean; speakerId?: string; isDuplicate?: boolean; isLate?: boolean; existingName?: string };
   onSelectSpeaker?: (speakerId: string | null) => void;
@@ -48,6 +50,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [organization, setOrganization] = useState('');
+  const [province, setProvince] = useState('');
   const [isRegisteringAnother, setIsRegisteringAnother] = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
 
@@ -93,12 +96,13 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
 
   const handleRegisterSubmit = (e: React.FormEvent, forceDuplicate = false) => {
     e.preventDefault();
-    if (!firstName.trim() || !lastName.trim()) return;
+    if (!firstName.trim() || !lastName.trim() || !province) return;
 
     const res = onRegister(
       firstName.trim(), 
       lastName.trim(), 
       organization.trim() || undefined,
+      province,
       forceDuplicate
     );
 
@@ -113,6 +117,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
     setFirstName('');
     setLastName('');
     setOrganization('');
+    setProvince('');
     setIsRegisteringAnother(false);
   };
 
@@ -206,6 +211,9 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
               {mySpeaker.organization && (
                 <p className="text-xs text-mdf-cyan font-medium">{mySpeaker.organization}</p>
               )}
+              {mySpeaker.province && (
+                <p className="text-xs text-slate-300 font-medium mt-1">{mySpeaker.province}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
@@ -258,6 +266,9 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
               <h3 className="text-lg font-black text-white mt-0.5">{myLateSpeaker?.name}</h3>
               {myLateSpeaker?.organization && (
                 <p className="text-xs text-amber-200 font-medium">{myLateSpeaker.organization}</p>
+              )}
+              {myLateSpeaker?.province && (
+                <p className="text-xs text-amber-100 font-medium mt-1">{myLateSpeaker.province}</p>
               )}
             </div>
 
@@ -345,6 +356,23 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({
                   className="w-full bg-mdf-darkBg border border-mdf-darkBorder focus:border-mdf-cyan rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+                Provincia <span className="text-red-400">*</span>
+              </label>
+              <select
+                required
+                value={province}
+                onChange={(e) => setProvince(e.target.value)}
+                className="w-full bg-mdf-darkBg border border-mdf-darkBorder focus:border-mdf-cyan rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500"
+              >
+                <option value="" disabled>Selecciona tu provincia...</option>
+                {PROVINCES.map(prov => (
+                  <option key={prov} value={prov}>{prov}</option>
+                ))}
+              </select>
             </div>
 
             <div>

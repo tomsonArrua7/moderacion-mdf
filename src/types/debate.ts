@@ -18,6 +18,7 @@ export interface Speaker {
   id: string;
   name: string;
   organization?: string;       // Ej: "Juventudes Centro", "Secretaría Gremial", etc.
+  province?: string;           // Provincia elegida
   registeredAt: number;        // Timestamp ms
   order: number;               // Posición en la lista (1, 2, 3...)
   status: SpeakerStatus;
@@ -68,6 +69,7 @@ export interface DebateSession {
 export interface ClientRegistrationPayload {
   name: string;
   organization?: string;
+  province?: string;
   sessionId?: string;
 }
 
@@ -84,5 +86,6 @@ export interface ReorderSpeakersPayload {
 export interface AddExceptionSpeakerPayload {
   name: string;
   organization?: string;
+  province?: string;
   insertPosition?: 'NEXT' | 'END';
 }

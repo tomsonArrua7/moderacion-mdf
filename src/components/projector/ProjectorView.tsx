@@ -6,6 +6,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Maximize, Minimize, Users, Mic, Clock } from 'lucide-react';
 import { formatDurationHuman } from '../../utils/timeUtils';
 import { getStoredFirebaseConfig } from '../../services/firebase';
+import { ArgentinaFlagIcon, VSignIcon, SunOfMayIcon } from '../icons/ArgentineIcons';
 
 interface ProjectorViewProps {
   session: DebateSession;
@@ -54,9 +55,7 @@ export const ProjectorView: React.FC<ProjectorViewProps> = ({ session, serverOff
   return (
     <div className="min-h-[calc(100vh-60px)] bg-[#060A17] text-white p-4 md:p-8 flex flex-col justify-between select-none relative overflow-hidden">
       
-      {/* Background ambient lighting */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-mdf-blue/15 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-mdf-cyan/10 rounded-full blur-[120px] pointer-events-none" />
+      {/* Background ambient lighting - Removido para estética minimalista */}
 
       {/* Top Bar for Projector */}
       <div className="flex items-center justify-between gap-4 border-b border-mdf-darkBorder/80 pb-4 z-10">
@@ -68,12 +67,15 @@ export const ProjectorView: React.FC<ProjectorViewProps> = ({ session, serverOff
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-black text-xl tracking-tight text-white">MDF <span className="text-mdf-cyan font-bold">JUVENTUDES</span></span>
+              <span className="font-black text-xl tracking-tight text-white flex items-center gap-1.5">
+                MDF <span className="text-mdf-cyan font-bold">JUVENTUDES</span>
+                <ArgentinaFlagIcon className="w-5 h-5 ml-1" />
+              </span>
               <span className="bg-mdf-cyan/20 text-mdf-cyan border border-mdf-cyan/40 text-xs px-2 py-0.5 rounded-full font-bold uppercase">
                 Comisión de Debate
               </span>
             </div>
-            <h2 className="text-xl md:text-2xl font-bold text-slate-100 tracking-tight mt-0.5">
+            <h2 className="text-xl md:text-2xl font-bold text-slate-100 tracking-tight mt-0.5 flex items-center gap-2">
               {session.title}
             </h2>
           </div>
@@ -178,15 +180,22 @@ export const ProjectorView: React.FC<ProjectorViewProps> = ({ session, serverOff
           </div>
         </div>
 
-        {/* Small Corner QR Code for Audience to Scan */}
-        <div className="md:col-span-3 bg-mdf-darkSurface/80 backdrop-blur-md border border-mdf-cyan/30 rounded-3xl p-3.5 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-xs font-extrabold text-white">¿Quieres hablar?</div>
-            <div className="text-[11px] text-mdf-cyan font-medium">Escanea para anotarte</div>
-            <div className="text-[10px] text-slate-400 font-mono mt-0.5">#{session.id}</div>
+        {/* Prominent QR Code for Audience to Scan */}
+        <div className="md:col-span-3 bg-mdf-darkSurface/80 backdrop-blur-md border border-mdf-cyan/30 rounded-3xl p-5 flex flex-col items-center justify-center gap-3 relative overflow-hidden">
+          {/* Subtle V Sign Watermark */}
+          <VSignIcon className="absolute -bottom-4 -right-4 w-32 h-32 text-mdf-blue/10 pointer-events-none" />
+          
+          <div className="text-center z-10">
+            <div className="text-sm font-extrabold text-white uppercase tracking-wider flex items-center justify-center gap-1.5">
+              ¿Querés hablar? <VSignIcon className="w-4 h-4 text-mdf-cyan" />
+            </div>
+            <div className="text-xs text-mdf-cyan font-medium mb-1">Escanea para anotarte</div>
           </div>
-          <div className="p-1.5 bg-white rounded-xl flex-shrink-0 shadow-md">
-            <QRCodeSVG value={participantUrl} size={64} level="M" />
+          <div className="p-3 bg-white rounded-2xl flex-shrink-0 shadow-lg border-4 border-mdf-cyan/20">
+            <QRCodeSVG value={participantUrl} size={140} level="M" />
+          </div>
+          <div className="text-xs text-slate-400 font-mono font-bold bg-slate-900 px-3 py-1 rounded-full">
+            #{session.id}
           </div>
         </div>
 

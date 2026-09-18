@@ -24,9 +24,9 @@ export const BlockConfigModal: React.FC<BlockConfigModalProps> = ({
 }) => {
   const [title, setTitle] = useState(session.title);
   const [description, setDescription] = useState(session.description || '');
-  const [totalBlockMinutes, setTotalBlockMinutes] = useState(session.totalBlockMinutes || 45);
-  const [minSpeakerSeconds, setMinSpeakerSeconds] = useState(session.minSpeakerSeconds || 60);
-  const [maxSpeakerSeconds, setMaxSpeakerSeconds] = useState(session.maxSpeakerSeconds || 180);
+  const [totalBlockMinutes, setTotalBlockMinutes] = useState(session.totalBlockMinutes || 60);
+  const [minSpeakerSeconds, setMinSpeakerSeconds] = useState(session.minSpeakerSeconds || 300);
+  const [maxSpeakerSeconds, setMaxSpeakerSeconds] = useState(session.maxSpeakerSeconds || 300);
 
   if (!isOpen) return null;
 
@@ -35,9 +35,9 @@ export const BlockConfigModal: React.FC<BlockConfigModalProps> = ({
     onSave({
       title: title.trim() || 'Debate MDF Juventudes',
       description: description.trim(),
-      totalBlockMinutes: Number(totalBlockMinutes) || 45,
-      minSpeakerSeconds: Number(minSpeakerSeconds) || 60,
-      maxSpeakerSeconds: Number(maxSpeakerSeconds) || 180
+      totalBlockMinutes: Number(totalBlockMinutes) || 60,
+      minSpeakerSeconds: Number(minSpeakerSeconds) || 300,
+      maxSpeakerSeconds: Number(maxSpeakerSeconds) || 300
     });
     onClose();
   };

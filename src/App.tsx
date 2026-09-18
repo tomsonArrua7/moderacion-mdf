@@ -15,9 +15,9 @@ export function App() {
   const sessionParam = urlParams.get('session');
   const roleParam = urlParams.get('role') as 'moderator' | 'participant' | 'projector' | null;
 
-  // Si no vino sesión en la URL, mostrar la pantalla de selección inicial
-  const [hasSelectedCommission, setHasSelectedCommission] = useState<boolean>(Boolean(sessionParam));
-  const [currentSessionId, setCurrentSessionId] = useState<string>(sessionParam || 'COMISION-1');
+  // Si no vino sesión en la URL, mostrar la pantalla de selección inicial (Ahora por defecto en MDF-JUV)
+  const [hasSelectedCommission, setHasSelectedCommission] = useState<boolean>(true);
+  const [currentSessionId, setCurrentSessionId] = useState<string>(sessionParam || 'MDF-JUV');
   const [isCommissionSelectOpen, setIsCommissionSelectOpen] = useState(false);
   const [isDebateGuideOpen, setIsDebateGuideOpen] = useState(false);
 

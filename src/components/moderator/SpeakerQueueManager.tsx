@@ -19,6 +19,7 @@ import confetti from 'canvas-confetti';
 import { Speaker, SpeakerStatus, AddExceptionSpeakerPayload } from '../../types/debate';
 import { formatDurationHuman } from '../../utils/timeUtils';
 import { playFanfareSound } from '../../utils/sound';
+import { PROVINCES } from '../../types/provinces';
 
 interface SpeakerQueueManagerProps {
   speakers: Speaker[];
@@ -54,6 +55,7 @@ export const SpeakerQueueManager: React.FC<SpeakerQueueManagerProps> = ({
   const [showExceptionModal, setShowExceptionModal] = useState(false);
   const [exceptionName, setExceptionName] = useState('');
   const [exceptionOrg, setExceptionOrg] = useState('');
+  const [exceptionProvince, setExceptionProvince] = useState('');
   const [exceptionPos, setExceptionPos] = useState<'NEXT' | 'END'>('NEXT');
   const [isShuffling, setIsShuffling] = useState(false);
 
@@ -101,11 +103,13 @@ export const SpeakerQueueManager: React.FC<SpeakerQueueManagerProps> = ({
     onAddExceptionSpeaker({
       name: exceptionName.trim(),
       organization: exceptionOrg.trim() || undefined,
+      province: exceptionProvince || undefined,
       insertPosition: exceptionPos
     });
 
     setExceptionName('');
     setExceptionOrg('');
+    setExceptionProvince('');
     setShowExceptionModal(false);
   };
 
@@ -296,11 +300,9 @@ export const SpeakerQueueManager: React.FC<SpeakerQueueManagerProps> = ({
                           </span>
                           {getStatusBadge(speaker, originalIndex)}
                         </div>
-                        {speaker.organization && (
-                          <div className="text-xs text-mdf-cyan/90 truncate font-medium">
-                            {speaker.organization}
-                          </div>
-                        )}
+                        <div className="text-xs text-mdf-cyan/90 truncate font-medium">
+                          {speaker.organization}{speaker.organization && speaker.province && ' • '}{speaker.province}
+                        </div>
                       </div>
                     </div>
 
@@ -439,6 +441,12 @@ export const SpeakerQueueManager: React.FC<SpeakerQueueManagerProps> = ({
                             <span className="text-mdf-cyan font-medium truncate">{speaker.organization}</span>
                           )}
                           {speaker.organization && <span>•</span>}
+                          {speaker.province && (
+                            <>
+                              <span className="text-slate-300 font-medium truncate">{speaker.province}</span>
+                              <span>•</span>
+                            </>
+                          )}
                           <span className="text-slate-400">Anotado: {timeStr}</span>
                         </div>
                       </div>
@@ -510,6 +518,22 @@ export const SpeakerQueueManager: React.FC<SpeakerQueueManagerProps> = ({
                   placeholder="Ej: Axel Kicillof"
                   className="w-full bg-mdf-darkBg border border-mdf-darkBorder focus:border-mdf-cyan rounded-xl px-3 py-2 text-xs text-white"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Provincia (Opcional)
+                </label>
+                <select
+                  value={exceptionProvince}
+                  onChange={(e) => setExceptionProvince(e.target.value)}
+                  className="w-full bg-mdf-darkBg border border-mdf-darkBorder focus:border-mdf-cyan rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500"
+                >
+                  <option value="">Selecciona tu provincia...</option>
+                  {PROVINCES.map(prov => (
+                    <option key={prov} value={prov}>{prov}</option>
+                  ))}
+                </select>
               </div>
 
               <div>

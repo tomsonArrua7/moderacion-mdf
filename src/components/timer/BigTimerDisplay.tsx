@@ -25,35 +25,29 @@ export const BigTimerDisplay: React.FC<BigTimerDisplayProps> = ({
   speakerName,
   speakerOrganization,
   size = 'md',
-  showProgressRing = true
+  showProgressRing = true // Not used anymore for minimalist look, but kept for prop compatibility
 }) => {
-  // Configuración de colores dinámicos
+  // Configuración de colores dinámicos (sin glows, minimalista)
   const getColorStyles = () => {
     switch (colorState) {
       case 'danger':
         return {
-          textColor: 'text-red-500 text-glow-red',
-          ringColor: '#EF4444',
-          bgGlow: 'bg-red-500/10 border-red-500/40 animate-glow-red',
+          textColor: 'text-red-500',
           badgeText: isOvertime ? '¡TIEMPO EXCEDIDO!' : '¡TIEMPO CUMPLIDO!',
-          badgeClass: 'bg-red-600 text-white animate-pulse'
+          badgeClass: 'bg-red-100 text-red-700 border border-red-200'
         };
       case 'warning':
         return {
-          textColor: 'text-amber-400 text-glow-amber',
-          ringColor: '#F59E0B',
-          bgGlow: 'bg-amber-500/10 border-amber-500/30',
+          textColor: 'text-amber-500',
           badgeText: 'ÚLTIMOS 30 SEGUNDOS',
-          badgeClass: 'bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse'
+          badgeClass: 'bg-amber-100 text-amber-700 border border-amber-200'
         };
       case 'normal':
       default:
         return {
-          textColor: 'text-white text-glow-cyan',
-          ringColor: '#00D2FF',
-          bgGlow: 'bg-mdf-blue/10 border-mdf-cyan/30',
+          textColor: 'text-white',
           badgeText: 'EN USO DE LA PALABRA',
-          badgeClass: 'bg-mdf-blue/30 text-mdf-cyan border border-mdf-cyan/40'
+          badgeClass: 'bg-slate-100 text-mdf-blueDark border border-slate-300'
         };
     }
   };
@@ -65,96 +59,52 @@ export const BigTimerDisplay: React.FC<BigTimerDisplayProps> = ({
     switch (size) {
       case 'giant':
         return {
-          container: 'w-full max-w-2xl py-6',
-          timeText: 'text-7xl sm:text-8xl md:text-9xl font-extrabold tracking-tighter',
-          ringSize: 360,
-          strokeWidth: 12
+          container: 'w-full max-w-4xl py-6',
+          timeText: 'text-8xl sm:text-9xl md:text-[12rem] font-black tracking-tighter',
         };
       case 'lg':
         return {
-          container: 'w-full max-w-lg py-4',
-          timeText: 'text-6xl sm:text-7xl md:text-8xl font-bold tracking-tight',
-          ringSize: 280,
-          strokeWidth: 10
+          container: 'w-full max-w-2xl py-4',
+          timeText: 'text-7xl sm:text-8xl md:text-9xl font-black tracking-tight',
         };
       case 'sm':
         return {
-          container: 'w-full max-w-xs py-2',
-          timeText: 'text-4xl sm:text-5xl font-bold tracking-tight',
-          ringSize: 180,
-          strokeWidth: 6
+          container: 'w-full max-w-sm py-2',
+          timeText: 'text-5xl sm:text-6xl font-black tracking-tight',
         };
       case 'md':
       default:
         return {
-          container: 'w-full max-w-md py-3',
-          timeText: 'text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight',
-          ringSize: 230,
-          strokeWidth: 8
+          container: 'w-full max-w-lg py-3',
+          timeText: 'text-6xl sm:text-7xl md:text-8xl font-black tracking-tight',
         };
     }
   };
 
   const dim = getSizeStyles();
-  const radius = (dim.ringSize - dim.strokeWidth * 2) / 2;
-  const circumference = 2 * Math.PI * radius;
-  // Stroke dash offset invertido para que se vaya vaciando
-  const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
 
   return (
     <div className={`relative flex flex-col items-center justify-center mx-auto ${dim.container}`}>
       
-      {/* Background glow circle */}
-      <div className={`relative flex items-center justify-center p-6 md:p-8 rounded-full border transition-all duration-500 ${colors.bgGlow}`}>
+      {/* Minimalist Flat Container */}
+      <div className={`relative flex items-center justify-center p-6 md:p-8 transition-all duration-500 w-full`}>
         
-        {/* SVG Circular Progress Ring */}
-        {showProgressRing && (
-          <svg
-            width={dim.ringSize}
-            height={dim.ringSize}
-            className="absolute inset-0 m-auto -rotate-90 transform pointer-events-none"
-          >
-            {/* Background track */}
-            <circle
-              cx={dim.ringSize / 2}
-              cy={dim.ringSize / 2}
-              r={radius}
-              stroke="rgba(255, 255, 255, 0.08)"
-              strokeWidth={dim.strokeWidth}
-              fill="transparent"
-            />
-            {/* Dynamic Progress track */}
-            <circle
-              cx={dim.ringSize / 2}
-              cy={dim.ringSize / 2}
-              r={radius}
-              stroke={colors.ringColor}
-              strokeWidth={dim.strokeWidth}
-              strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-              strokeLinecap="round"
-              fill="transparent"
-              className="transition-all duration-200"
-            />
-          </svg>
-        )}
-
         {/* Center Content: Speaker Name & Big Time Numbers */}
-        <div className="z-10 flex flex-col items-center justify-center text-center px-4">
+        <div className="z-10 flex flex-col items-center justify-center text-center px-4 w-full">
           
           {/* Status Alert Badge */}
-          <div className="mb-2">
+          <div className="mb-4">
             {isPaused ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/30 text-amber-300 border border-amber-500/50 uppercase tracking-wider">
-                <Pause className="w-3.5 h-3.5 fill-amber-300" /> PAUSADO
+              <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-bold bg-amber-100 text-amber-700 border border-amber-300 uppercase tracking-wider">
+                <Pause className="w-4 h-4 fill-amber-700" /> PAUSADO
               </span>
             ) : isIdle ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700 uppercase tracking-wider">
+              <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-bold bg-slate-800 text-slate-300 border border-slate-700 uppercase tracking-wider">
                 LISTO PARA INICIAR
               </span>
             ) : (
-              <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${colors.badgeClass}`}>
-                {isOvertime && <AlertCircle className="w-3.5 h-3.5" />}
+              <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider ${colors.badgeClass}`}>
+                {isOvertime && <AlertCircle className="w-4 h-4" />}
                 {colors.badgeText}
               </span>
             )}
@@ -165,14 +115,26 @@ export const BigTimerDisplay: React.FC<BigTimerDisplayProps> = ({
             {formattedTime}
           </div>
 
+          {/* Progress Bar (reemplaza al anillo circular por una barra lineal minimalista) */}
+          {showProgressRing && !isIdle && (
+            <div className="w-full max-w-lg h-2 bg-slate-800 rounded-full mt-8 overflow-hidden">
+              <div 
+                className={`h-full transition-all duration-200 ${
+                  colorState === 'danger' ? 'bg-red-500' : colorState === 'warning' ? 'bg-amber-500' : 'bg-mdf-cyan'
+                }`}
+                style={{ width: `${Math.max(0, Math.min(100, progressPercent))}%` }}
+              />
+            </div>
+          )}
+
           {/* Speaker label if provided */}
           {speakerName && (
-            <div className="mt-3 max-w-xs sm:max-w-sm truncate">
-              <div className="text-base sm:text-lg font-bold text-white tracking-tight truncate">
+            <div className="mt-6 max-w-full w-full truncate">
+              <div className="text-2xl sm:text-3xl font-black text-white tracking-tight truncate">
                 {speakerName}
               </div>
               {speakerOrganization && (
-                <div className="text-xs sm:text-sm text-mdf-cyan font-medium truncate">
+                <div className="text-base sm:text-lg text-mdf-cyan font-bold truncate mt-1">
                   {speakerOrganization}
                 </div>
               )}
@@ -180,9 +142,7 @@ export const BigTimerDisplay: React.FC<BigTimerDisplayProps> = ({
           )}
 
         </div>
-
       </div>
-
     </div>
   );
 };
