@@ -6,7 +6,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Maximize, Minimize, Users, Mic, Clock } from 'lucide-react';
 import { formatDurationHuman } from '../../utils/timeUtils';
 import { getStoredFirebaseConfig } from '../../services/firebase';
-import { ArgentinaFlagIcon, VSignIcon, SunOfMayIcon } from '../icons/ArgentineIcons';
+import { ArgentinaFlagIcon, VSignIcon } from '../icons/ArgentineIcons';
 
 interface ProjectorViewProps {
   session: DebateSession;
