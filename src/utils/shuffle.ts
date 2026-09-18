@@ -19,24 +19,55 @@ export const fisherYatesShuffle = <T>(array: T[]): T[] => {
 export const shuffleAndReorderSpeakers = (speakers: Speaker[]): Speaker[] => {
   const shuffled = fisherYatesShuffle(speakers);
   
-  // Resolve consecutive provinces
-  for (let i = 0; i < shuffled.length - 1; i++) {
-    if (shuffled[i].province && shuffled[i].province === shuffled[i + 1].province) {
-      for (let j = i + 2; j < shuffled.length; j++) {
-        const jProvince = shuffled[j].province;
-        const iPlus1Province = shuffled[i + 1].province;
+  let hasConflicts = true;
+  let attempts = 0;
+  const maxAttempts = 200;
 
-        const jOkWithI = jProvince !== shuffled[i].province;
-        const jOkWithIPlus2 = (i + 2 < shuffled.length && i + 2 !== j) ? jProvince !== shuffled[i + 2].province : true;
-        const iPlus1OkWithJMinus1 = iPlus1Province !== shuffled[j - 1].province;
-        const iPlus1OkWithJPlus1 = (j + 1 < shuffled.length) ? iPlus1Province !== shuffled[j + 1].province : true;
+  while (hasConflicts && attempts < maxAttempts) {
+    hasConflicts = false;
+    
+    for (let i = 0; i < shuffled.length - 1; i++) {
+      if (shuffled[i].province && shuffled[i].province === shuffled[i + 1].province) {
+        hasConflicts = true;
+        
+        // Helper para encontrar lugares seguros donde insertar el elemento sin causar choques
+        const findSafeSpotsForIndex = (indexToMove: number) => {
+          const prov = shuffled[indexToMove].province;
+          const spots: number[] = [];
+          for (let k = 0; k <= shuffled.length; k++) {
+            if (k === indexToMove || k === indexToMove + 1) continue;
+            const prevProv = k > 0 ? shuffled[k - 1].province : null;
+            const nextProv = k < shuffled.length ? shuffled[k].province : null;
+            // Si lo insertamos en 'k', no debe chocar ni con el anterior ni con el siguiente
+            if (prevProv !== prov && nextProv !== prov) {
+              spots.push(k);
+            }
+          }
+          return spots;
+        };
 
-        if (jOkWithI && jOkWithIPlus2 && iPlus1OkWithJMinus1 && iPlus1OkWithJPlus1) {
-          [shuffled[i + 1], shuffled[j]] = [shuffled[j], shuffled[i + 1]];
-          break;
+        // Intentar mover el orador de la derecha (i + 1)
+        let safeSpots = findSafeSpotsForIndex(i + 1);
+        let targetIndex = i + 1;
+
+        // Si no hay lugar, intentar con el orador de la izquierda (i)
+        if (safeSpots.length === 0) {
+          safeSpots = findSafeSpotsForIndex(i);
+          targetIndex = i;
+        }
+
+        if (safeSpots.length > 0) {
+          // Elegir un lugar seguro al azar para mantener la aleatoriedad
+          const randomK = safeSpots[Math.floor(Math.random() * safeSpots.length)];
+          const element = shuffled.splice(targetIndex, 1)[0];
+          // Ajustar el índice de inserción si el arreglo se corrió a la izquierda
+          const insertPos = randomK > targetIndex ? randomK - 1 : randomK;
+          shuffled.splice(insertPos, 0, element);
+          break; // Romper el for loop y volver a escanear desde 0
         }
       }
     }
+    attempts++;
   }
 
   return shuffled.map((speaker, index) => ({

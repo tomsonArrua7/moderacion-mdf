@@ -36,33 +36,58 @@ function calculateSpeakerTimeSeconds(totalBlockMinutes, speakerCount, minSeconds
 
 // Algoritmo Fisher-Yates Knuth Shuffle con separación de provincias
 function fisherYatesShuffle(array) {
-  let shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
+  let result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    [result[i], result[j]] = [result[j], result[i]];
   }
 
-  // Resolve consecutive provinces
-  for (let i = 0; i < shuffled.length - 1; i++) {
-    if (shuffled[i].province && shuffled[i].province === shuffled[i + 1].province) {
-      for (let j = i + 2; j < shuffled.length; j++) {
-        const jProvince = shuffled[j].province;
-        const iPlus1Province = shuffled[i + 1].province;
+  let hasConflicts = true;
+  let attempts = 0;
+  const maxAttempts = 200;
 
-        const jOkWithI = jProvince !== shuffled[i].province;
-        const jOkWithIPlus2 = (i + 2 < shuffled.length && i + 2 !== j) ? jProvince !== shuffled[i + 2].province : true;
-        const iPlus1OkWithJMinus1 = iPlus1Province !== shuffled[j - 1].province;
-        const iPlus1OkWithJPlus1 = (j + 1 < shuffled.length) ? iPlus1Province !== shuffled[j + 1].province : true;
+  while (hasConflicts && attempts < maxAttempts) {
+    hasConflicts = false;
+    
+    for (let i = 0; i < result.length - 1; i++) {
+      if (result[i].province && result[i].province === result[i + 1].province) {
+        hasConflicts = true;
+        
+        const findSafeSpotsForIndex = (indexToMove) => {
+          const prov = result[indexToMove].province;
+          const spots = [];
+          for (let k = 0; k <= result.length; k++) {
+            if (k === indexToMove || k === indexToMove + 1) continue;
+            const prevProv = k > 0 ? result[k - 1].province : null;
+            const nextProv = k < result.length ? result[k].province : null;
+            if (prevProv !== prov && nextProv !== prov) {
+              spots.push(k);
+            }
+          }
+          return spots;
+        };
 
-        if (jOkWithI && jOkWithIPlus2 && iPlus1OkWithJMinus1 && iPlus1OkWithJPlus1) {
-          [shuffled[i + 1], shuffled[j]] = [shuffled[j], shuffled[i + 1]];
+        let safeSpots = findSafeSpotsForIndex(i + 1);
+        let targetIndex = i + 1;
+
+        if (safeSpots.length === 0) {
+          safeSpots = findSafeSpotsForIndex(i);
+          targetIndex = i;
+        }
+
+        if (safeSpots.length > 0) {
+          const randomK = safeSpots[Math.floor(Math.random() * safeSpots.length)];
+          const element = result.splice(targetIndex, 1)[0];
+          const insertPos = randomK > targetIndex ? randomK - 1 : randomK;
+          result.splice(insertPos, 0, element);
           break;
         }
       }
     }
+    attempts++;
   }
 
-  return shuffled;
+  return result;
 }
 
 // Inicializar una sesión limpia si no existe
